@@ -6,7 +6,7 @@ from app.catalog import get_catalog
 from app.engine import query
 from app.engine.ingredient_groups import classify
 from app.engine.needs import needs_for
-from app.engine.reviews import ReviewIndex, ReviewSignal
+from app.engine.reviews import ReviewIndex, ReviewSignal, load_reviews
 from app.engine.scoring import analyze, delivery, explain, quick_score, score
 from app.environment import dew_point_band
 from app.models import Environment, RecommendationRequest
@@ -212,6 +212,51 @@ def test_reviews_trust_many_more_than_few_and_near_types_less():
     near = ReviewIndex([r("4A")]).evidence("x", ["3C"])
     assert near.score == pytest.approx(0.65 / 5.65)
     assert near.summary is None
+
+
+def test_family_only_reviews_count_moderately_inside_the_family():
+    curly = ReviewSignal(product_id="x", hair_family="Curly", sentiment=1)
+    # FAMILY_WEIGHT 0.4 for a 3B asker; NO_TYPE_WEIGHT 0.1 for a 1A asker.
+    assert ReviewIndex([curly]).evidence("x", ["3B"]).score == pytest.approx(0.4 / 5.4)
+    assert ReviewIndex([curly]).evidence("x", ["1A"]).score == pytest.approx(0.1 / 5.1)
+    # A code beats the family: a 3A review for a 3C asker is two steps away (0.3).
+    coded = ReviewSignal(
+        product_id="x", hair_type="3A", hair_family="Curly", sentiment=1
+    )
+    assert ReviewIndex([coded]).evidence("x", ["3C"]).score == pytest.approx(0.3 / 5.3)
+
+
+def test_summary_falls_back_to_the_family_and_never_says_0_of_0():
+    def r(sentiment, **hair):
+        return ReviewSignal(
+            product_id="x", sentiment=sentiment, helped=["definition"], **hair
+        )
+
+    family_only = [r(1, hair_family="Curly")] * 2 + [r(-1, hair_family="Curly")]
+    evidence = ReviewIndex(family_only).evidence("x", ["3B", "3C"])
+    assert evidence.same_type == 0
+    assert evidence.summary == (
+        "2 of 3 reviewers with curly hair liked it: it defines and holds"
+    )
+    # Same-code reviewers win over the family when there are any.
+    mixed = family_only + [r(1, hair_type="3B")]
+    assert ReviewIndex(mixed).evidence("x", ["3B"]).summary == (
+        "1 of 1 reviewers with 3B hair liked it: it defines and holds"
+    )
+    # Outside the family, or no hair info at all: no summary.
+    assert ReviewIndex(family_only).evidence("x", ["1A"]).summary is None
+    assert ReviewIndex([r(1)]).evidence("x", ["3B"]).summary is None
+
+
+def test_load_reviews_reads_strand_reviews_and_skips_bad_lines(tmp_path, monkeypatch):
+    path = tmp_path / "reviews.jsonl"
+    good = ReviewSignal(product_id="x", hair_family="Wavy", sentiment=0.5)
+    path.write_text(f'{good.model_dump_json()}\n{{not json\n{{"product_id": "y"}}\n\n')
+    monkeypatch.setenv("STRAND_REVIEWS", str(path))
+    assert load_reviews().by_product == {"x": [good]}
+    # A missing file falls back to the default path (absent in the repo).
+    monkeypatch.setenv("STRAND_REVIEWS", str(tmp_path / "missing.jsonl"))
+    assert load_reviews().by_product == {}
 
 
 def test_reviews_add_their_trusted_share_and_many_can_change_the_order():

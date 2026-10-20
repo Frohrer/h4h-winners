@@ -8,6 +8,14 @@ from typing import Literal
 
 HAIR_TYPES = [f"{n}{c}" for n in "1234" for c in "ABC"]
 
+# The family a code belongs to, by its digit: 3B → Curly. Same names as models.HairFamily.
+FAMILY_OF_DIGIT = {"1": "Straight", "2": "Wavy", "3": "Curly", "4": "Coily"}
+
+
+def family_of(hair_type: str) -> str | None:
+    return FAMILY_OF_DIGIT.get(hair_type[:1]) if hair_type in HAIR_TYPES else None
+
+
 Need = Literal[
     "moisture",
     "seal",

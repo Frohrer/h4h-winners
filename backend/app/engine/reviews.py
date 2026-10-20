@@ -2,24 +2,31 @@
 
 A review from someone with the same hair type counts fully. Neighbouring types count
 less ("3C liked it" says something about 4A; people often misjudge their type by a
-step). Reviews that don't say a hair type count a little.
+step). Reviews that only name a hair family ("my curly hair") count moderately when
+the asker is in that family. Reviews that don't say either count a little.
 """
 
-import json
 import logging
+import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
 from pydantic import BaseModel, Field, ValidationError
 
-from app.engine.vocab import HAIR_TYPES, HELPS, Need
+from app.engine.vocab import HAIR_TYPES, HELPS, Need, family_of
+from app.models import HairFamily
 
 log = logging.getLogger(__name__)
 
 REVIEWS_PATH = Path(__file__).parent.parent / "data" / "reviews.jsonl"
 
 NO_TYPE_WEIGHT = 0.1
+# "Curly" spans 3A-3C, so a family-only review sits on average about one step from the
+# asker's code (0.65 at STEP_PENALTY) but could be two (0.3); self-described families
+# are also looser than codes (3C/4A reviewers say either curly or coily). 0.4 sits in
+# between: four such reviews count about as much as one exact match.
+FAMILY_WEIGHT = 0.4
 STEP_PENALTY = 0.35
 # With this much matching evidence the reviews count half; fewer and they barely count.
 HALF_TRUST_AT = 5
@@ -30,6 +37,7 @@ class ReviewSignal(BaseModel):
 
     product_id: str
     hair_type: str | None = None
+    hair_family: HairFamily | None = None  # set alone when the review names no code
     porosity: Literal["low", "medium", "high"] | None = None
     thickness: Literal["fine", "medium", "coarse"] | None = None
     sentiment: float = Field(ge=-1, le=1)
@@ -48,15 +56,21 @@ class Evidence:
     summary: str | None
 
 
+def _family(review: ReviewSignal) -> str | None:
+    return review.hair_family or (review.hair_type and family_of(review.hair_type))
+
+
 def _closeness(
     review: ReviewSignal, hair_types: list[str], porosity: str | None
 ) -> float:
-    if not review.hair_type or review.hair_type not in HAIR_TYPES or not hair_types:
-        w = NO_TYPE_WEIGHT
-    else:
+    if review.hair_type in HAIR_TYPES and hair_types:
         r = HAIR_TYPES.index(review.hair_type)
         steps = min(abs(r - HAIR_TYPES.index(t)) for t in hair_types)
         w = max(0.0, 1 - STEP_PENALTY * steps)
+    elif review.hair_family and review.hair_family in map(family_of, hair_types):
+        w = FAMILY_WEIGHT
+    else:
+        w = NO_TYPE_WEIGHT
     if review.porosity and porosity and w > 0:
         w *= 1.25 if review.porosity == porosity else 0.75
     return w
@@ -89,27 +103,40 @@ class ReviewIndex:
             return Evidence(len(reviews), len(same), 0.0, None)
 
         trust = weight / (weight + HALF_TRUST_AT)
+        # Same-code reviewers when there are any, else everyone in the asker's families
+        # ("3 of 4 reviewers with curly hair"), else no summary.
         summary = None
-        if same:
-            liked = sum(1 for r in same if r.sentiment > 0)
-            summary = f"{liked} of {len(same)} reviewers with {'/'.join(hair_types)} hair liked it"
+        families = list(dict.fromkeys(map(family_of, hair_types)))
+        kin = same or [r for r in reviews if _family(r) in families]
+        if kin:
+            liked = sum(1 for r in kin if r.sentiment > 0)
+            who = "/".join(hair_types) if same else "/".join(families).lower()
+            summary = f"{liked} of {len(kin)} reviewers with {who} hair liked it"
             if helped:
                 top = max(helped, key=helped.get)
                 summary += f": it {HELPS[top]}"
         return Evidence(len(reviews), len(same), weighted / weight * trust, summary)
 
 
-def load_reviews(path: Path = REVIEWS_PATH) -> ReviewIndex:
+def reviews_path() -> Path:
+    """STRAND_REVIEWS (the generated file from scripts/build_reviews.py) when it exists."""
+    env = os.environ.get("STRAND_REVIEWS")
+    return Path(env) if env and Path(env).exists() else REVIEWS_PATH
+
+
+def load_reviews(path: Path | None = None) -> ReviewIndex:
     """Bad lines are skipped and counted, so one broken row never takes the API down."""
+    path = path or reviews_path()
     if not path.exists():
         return ReviewIndex([])
     signals, skipped = [], 0
-    for line in path.read_text().splitlines():
-        if not line.strip():
-            continue
-        try:
-            signals.append(ReviewSignal.model_validate(json.loads(line)))
-        except (json.JSONDecodeError, ValidationError):
-            skipped += 1
+    with path.open() as f:
+        for line in f:
+            if not line.strip():
+                continue
+            try:
+                signals.append(ReviewSignal.model_validate_json(line))
+            except ValidationError:
+                skipped += 1
     log.info("Loaded %d review signals (%d bad lines skipped)", len(signals), skipped)
     return ReviewIndex(signals)
