@@ -89,13 +89,16 @@ export interface Environment {
   advice: string
 }
 
+export type Porosity = 'low' | 'medium' | 'high'
+export type Thickness = 'fine' | 'medium' | 'coarse'
+
 export interface RecommendationRequest {
   hair_types: string[]
   liked_product_ids: string[]
   current_product_ids: string[]
   query: string
-  porosity?: 'low' | 'medium' | 'high'
-  thickness?: 'fine' | 'medium' | 'coarse'
+  porosity?: Porosity
+  thickness?: Thickness
   density?: 'low' | 'medium' | 'high'
   scalp?: 'normal' | 'oily' | 'dry' | 'flaky'
   color_treated?: boolean

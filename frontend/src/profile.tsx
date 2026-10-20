@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { api } from './api'
-import type { Location } from './types'
+import type { Location, Porosity, Thickness } from './types'
 
 // The profile lives in localStorage until there are accounts. Every
 // recommendation request sends it in full, so the recommender never depends
@@ -16,18 +16,23 @@ export type LocationPref = { mode: 'detect' } | { mode: 'set'; value: Location }
 
 export interface Profile {
   hairTypes: string[]
+  porosity: Porosity | null
+  thickness: Thickness | null
   favorites: string[]
   using: string[]
   location: LocationPref
 }
 
 type ListKey = 'favorites' | 'using'
+type TraitKey = 'porosity' | 'thickness'
 
 interface ProfileApi extends Profile {
   /** The location to send with searches, or null if unknown or turned off. */
   activeLocation: Location | null
   detecting: boolean
   toggleHairType: (code: string) => void
+  /** Picking the current value again clears it; both are optional. */
+  toggleTrait: <K extends TraitKey>(key: K, value: NonNullable<Profile[K]>) => void
   setLocation: (pref: LocationPref) => void
   toggle: (list: ListKey, productId: string) => void
   has: (list: ListKey, productId: string) => boolean
@@ -35,7 +40,14 @@ interface ProfileApi extends Profile {
 }
 
 const STORAGE_KEY = 'strand.profile.v1'
-const EMPTY: Profile = { hairTypes: [], favorites: [], using: [], location: { mode: 'detect' } }
+const EMPTY: Profile = {
+  hairTypes: [],
+  porosity: null,
+  thickness: null,
+  favorites: [],
+  using: [],
+  location: { mode: 'detect' },
+}
 
 function load(): Profile {
   try {
@@ -86,6 +98,11 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
       })),
     [],
   )
+  const toggleTrait = useCallback(
+    <K extends TraitKey>(key: K, value: NonNullable<Profile[K]>) =>
+      setProfile((p) => ({ ...p, [key]: p[key] === value ? null : value })),
+    [],
+  )
   const setLocation = useCallback((location: LocationPref) => {
     setDetectFailed(false)
     setProfile((p) => ({ ...p, location }))
@@ -116,12 +133,13 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
       activeLocation: profile.location.mode === 'set' ? profile.location.value : null,
       detecting: profile.location.mode === 'detect' && !detectFailed,
       toggleHairType,
+      toggleTrait,
       setLocation,
       toggle,
       remove,
       has: (list, id) => profile[list].includes(id),
     }),
-    [profile, detectFailed, toggleHairType, setLocation, toggle, remove],
+    [profile, detectFailed, toggleHairType, toggleTrait, setLocation, toggle, remove],
   )
 
   return <ProfileContext.Provider value={value}>{children}</ProfileContext.Provider>
