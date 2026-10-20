@@ -2,11 +2,10 @@ import { createContext, useContext } from 'react'
 import type { Location, Porosity, Thickness } from './types'
 
 /**
- * 'detect' = not decided yet; look it up from the connection once.
- * 'set'    = detected or chosen; never overwritten by detection again.
- * 'off'    = the person removed it; respect that until they turn it back on.
+ * 'set' = the default city or one the person chose.
+ * 'off' = the person removed it; respect that until they choose a city again.
  */
-export type LocationPref = { mode: 'detect' } | { mode: 'set'; value: Location } | { mode: 'off' }
+export type LocationPref = { mode: 'set'; value: Location } | { mode: 'off' }
 
 export interface Profile {
   hairTypes: string[]
@@ -21,9 +20,8 @@ export type ListKey = 'favorites' | 'using'
 export type TraitKey = 'porosity' | 'thickness'
 
 export interface ProfileApi extends Profile {
-  /** The location to send with searches, or null if unknown or turned off. */
+  /** The location to send with searches, or null if turned off. */
   activeLocation: Location | null
-  detecting: boolean
   toggleHairType: (code: string) => void
   /** Picking the current value again clears it; both are optional. */
   toggleTrait: <K extends TraitKey>(key: K, value: NonNullable<Profile[K]>) => void

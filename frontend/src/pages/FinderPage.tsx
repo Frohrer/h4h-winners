@@ -61,9 +61,6 @@ export function FinderPage() {
         limit: shown,
       }),
     [searchKey, shown],
-    // Wait out IP detection so the first results already include climate,
-    // instead of rendering once without it and reshuffling a second later.
-    !profile.detecting,
   )
 
   const submit = (e: FormEvent) => {
