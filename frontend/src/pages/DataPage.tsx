@@ -105,7 +105,7 @@ export function DataPage() {
       <header className="data__hero">
         <h1 className="display">Every recommendation starts with the label.</h1>
         <p className="data__lead">
-          strands.hair learns from over {STATS.reviews} reviews of more than {STATS.products} hair products from{' '}
+          Strands learns from over {STATS.reviews} reviews of more than {STATS.products} hair products from{' '}
           {STATS.brands} brands. In over {STATS.hairProfileReviews} of them, the reviewer tells us about their own hair:
           its type, porosity, or thickness.
         </p>
@@ -189,7 +189,7 @@ export function DataPage() {
               </dd>
             </div>
           </dl>
-          <a className="button button--primary" href={`mailto:${RELEASE.contact}?subject=strands.hair%20dataset`}>
+          <a className="button button--primary" href={`mailto:${RELEASE.contact}?subject=Strands%20dataset`}>
             Ask for early access
           </a>
         </div>

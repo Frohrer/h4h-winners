@@ -1,3 +1,5 @@
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from typing import Annotated
 
 from fastapi import Depends, FastAPI, HTTPException, Query, Request
@@ -16,7 +18,16 @@ from app.models import (
 )
 from app.recommender import Recommender, get_recommender
 
-app = FastAPI(title="strands.hair API")
+
+@asynccontextmanager
+async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+    # Build the recommender before serving. Built lazily, the first burst of
+    # requests each built their own copy and ran a 2 GB server out of memory.
+    get_recommender()
+    yield
+
+
+app = FastAPI(title="Strands API", lifespan=lifespan)
 
 CatalogDep = Annotated[Catalog, Depends(get_catalog)]
 RecommenderDep = Annotated[Recommender, Depends(get_recommender)]
