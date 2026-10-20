@@ -16,7 +16,7 @@ export function App() {
       </a>
       <header className="masthead">
         <Link to="/" className="wordmark">
-          Strand
+          strands.hair
         </Link>
         <nav aria-label="Main">
           <NavLink to="/" end>
