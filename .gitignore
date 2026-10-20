@@ -1,0 +1,70 @@
+# One ignore file for the whole repo (backend/, frontend/, scraper/).
+# data/ keeps its own .gitignore for raw dumps, owned by the scraper.
+# Do NOT ignore uv.lock, package-lock.json, or .python-version: they're what
+# make installs reproducible.
+
+# --- Secrets ------------------------------------------------------------------
+# Keys belong in the macOS Keychain / a secrets manager, never in the tree.
+# These patterns are a backstop for accidents.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+secrets.*
+credentials.json
+
+# --- Python -------------------------------------------------------------------
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+.coverage.*
+htmlcov/
+.ipynb_checkpoints/
+
+# --- Node / Vite --------------------------------------------------------------
+node_modules/
+dist/
+dist-ssr/
+*.local
+*.tsbuildinfo
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# --- Local databases --------------------------------------------------------
+# Re-creatable and often large; committing one bloats every clone forever,
+# even if it's deleted in a later commit. Dataset files (*.jsonl.gz) are
+# deliberately NOT matched here: data/.gitignore decides what data is tracked.
+*.sqlite
+*.sqlite3
+*.db
+*.duckdb
+.cache/
+
+# --- Logs ---------------------------------------------------------------------
+logs/
+*.log
+
+# --- OS / editors -------------------------------------------------------------
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+*.swp
+*.swo
+*~
+
+# --- Claude Code --------------------------------------------------------------
+# Shared settings (.claude/settings.json) are committed; personal ones aren't.
+.claude/settings.local.json
