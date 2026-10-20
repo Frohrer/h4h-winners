@@ -1,11 +1,12 @@
-"""In-memory product catalog loaded from a JSON seed file.
+"""In-memory product catalog loaded from a JSON file.
 
-The seed is fictional. When scraped data arrives, replace load_catalog() with a
-database-backed source that exposes the same methods; the routes and the
-recommender only talk to Catalog.
+The app loads the catalog built from scraped data (scripts/build_catalog.py,
+path in STRAND_CATALOG) when it exists, else the fictional seed. The routes and
+the recommender only talk to Catalog.
 """
 
 import json
+import os
 from functools import lru_cache
 from pathlib import Path
 
@@ -89,4 +90,5 @@ def load_catalog(path: Path = SEED_PATH) -> Catalog:
 
 @lru_cache
 def get_catalog() -> Catalog:
-    return load_catalog()
+    built = Path(os.environ.get("STRAND_CATALOG", ""))
+    return load_catalog(built if built.is_file() else SEED_PATH)

@@ -1,0 +1,24 @@
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      # Built from ./data by backend/scripts; the app falls back to the seed catalog without them.
+      - STRAND_CATALOG=/data/generated/catalog.json
+      - STRAND_REVIEWS=/data/generated/reviews.jsonl
+    volumes:
+      - ./backend:/app
+      - ./data:/data
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "5173:5173"
+    environment:
+      - API_URL=http://backend:8000
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend

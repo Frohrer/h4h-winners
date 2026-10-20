@@ -5,9 +5,14 @@ import { EnvironmentNote } from '../components/EnvironmentNote'
 import { HairTypePicker } from '../components/HairTypePicker'
 import { LocationField } from '../components/LocationField'
 import { ProductTile } from '../components/ProductTile'
+import { TraitPicker } from '../components/TraitPicker'
 import { formatList } from '../format'
 import { useProfile } from '../profile'
+import type { Porosity, Thickness } from '../types'
 import { useAsync } from '../useAsync'
+
+const POROSITY: Porosity[] = ['low', 'medium', 'high']
+const THICKNESS: Thickness[] = ['fine', 'medium', 'coarse']
 
 export function FinderPage() {
   const profile = useProfile()
@@ -37,12 +42,15 @@ export function FinderPage() {
     () =>
       api.recommend({
         hair_types: profile.hairTypes,
+        // undefined is dropped by JSON.stringify, so unset traits aren't sent.
+        porosity: profile.porosity ?? undefined,
+        thickness: profile.thickness ?? undefined,
         liked_product_ids: profile.favorites,
         current_product_ids: profile.using,
         query: q,
         location,
       }),
-    [profile.hairTypes.join(','), q, locationKey, rankKey],
+    [profile.hairTypes.join(','), profile.porosity, profile.thickness, q, locationKey, rankKey],
     // Wait out IP detection so the first results already include climate,
     // instead of rendering once without it and reshuffling a second later.
     !profile.detecting,
@@ -77,6 +85,20 @@ export function FinderPage() {
             onToggle={profile.toggleHairType}
           />
         )}
+        <div className="finder__traits">
+          <TraitPicker
+            legend="Porosity"
+            options={POROSITY}
+            selected={profile.porosity}
+            onToggle={(v) => profile.toggleTrait('porosity', v)}
+          />
+          <TraitPicker
+            legend="Strands"
+            options={THICKNESS}
+            selected={profile.thickness}
+            onToggle={(v) => profile.toggleTrait('thickness', v)}
+          />
+        </div>
         {hairTypes.error && <ApiDown />}
       </section>
 
@@ -137,7 +159,12 @@ export function FinderPage() {
 
         <div className="grid">
           {results.map((r) => (
-            <ProductTile key={r.product.id} product={r.product} reasons={r.reasons} />
+            <ProductTile
+              key={r.product.id}
+              product={r.product}
+              reasons={r.reasons}
+              warnings={r.warnings}
+            />
           ))}
         </div>
       </section>

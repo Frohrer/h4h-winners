@@ -140,6 +140,8 @@ class Recommendation(BaseModel):
     # recommender should keep filling these — the UI shows them under each
     # result so people can tell why something was suggested.
     reasons: list[str]
+    # Things to watch out for ("Glycerin can cause frizz in today's humid air").
+    warnings: list[str] = Field(default_factory=list)
 
 
 class RecommendationRequest(BaseModel):
@@ -147,6 +149,12 @@ class RecommendationRequest(BaseModel):
     liked_product_ids: list[str] = Field(default_factory=list)
     current_product_ids: list[str] = Field(default_factory=list)
     query: str = ""
+    # Optional hair details; each sharpens the match when the UI starts asking for it.
+    porosity: Literal["low", "medium", "high"] | None = None
+    thickness: Literal["fine", "medium", "coarse"] | None = None
+    density: Literal["low", "medium", "high"] | None = None
+    scalp: Literal["normal", "oily", "dry", "flaky"] | None = None
+    color_treated: bool = False
     # None means the person turned location off; recommend without climate.
     location: Location | None = None
     limit: int = Field(default=24, ge=1, le=100)

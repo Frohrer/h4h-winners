@@ -8,11 +8,12 @@ import { FavoriteToggle } from './SaveButtons'
 interface Props {
   product: ProductSummary
   reasons?: string[]
+  warnings?: string[]
   /** Extra detail under the price, e.g. the ingredient comparison on similar products. */
   children?: ReactNode
 }
 
-export function ProductTile({ product, reasons, children }: Props) {
+export function ProductTile({ product, reasons, warnings, children }: Props) {
   return (
     <article className="tile">
       <div className="tile__media">
@@ -37,6 +38,13 @@ export function ProductTile({ product, reasons, children }: Props) {
         <ul className="reasons">
           {reasons.map((r) => (
             <li key={r}>{r}</li>
+          ))}
+        </ul>
+      )}
+      {warnings && warnings.length > 0 && (
+        <ul className="reasons reasons--warn">
+          {warnings.map((w) => (
+            <li key={w}>{w}</li>
           ))}
         </ul>
       )}

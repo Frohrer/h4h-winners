@@ -20,6 +20,10 @@ const CONTAINER_BY_CATEGORY: Record<string, Container> = {
   'Hair oil': 'dropper',
   'Scalp serum': 'dropper',
   Mousse: 'can',
+  'Dry shampoo': 'can',
+  'Styling spray': 'spray',
+  'Styling cream': 'jar',
+  'Hair serum': 'dropper',
 }
 
 const CAP = 'var(--ink)'
