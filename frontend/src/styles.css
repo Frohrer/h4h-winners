@@ -400,7 +400,39 @@ main {
   letter-spacing: -0.01em;
 }
 
-/* The one animated moment: a selected strand draws itself in. */
+/* Strand motion, all in response to the person: hovering makes a strand sway
+   from its root and spring back, and selecting one draws it in. */
+.hair-type__strand {
+  transform-origin: 50% 0;
+}
+
+.hair-type:hover .hair-type__strand,
+.hair-type:focus-visible .hair-type__strand {
+  animation: jiggle-strand 700ms cubic-bezier(0.3, 0.6, 0.4, 1);
+}
+
+@keyframes jiggle-strand {
+  0% {
+    transform: rotate(0) scaleY(1);
+  }
+  20% {
+    transform: rotate(7deg) scaleY(1.06);
+  }
+  40% {
+    transform: rotate(-5deg) scaleY(0.95);
+  }
+  60% {
+    transform: rotate(3deg) scaleY(1.03);
+  }
+  80% {
+    transform: rotate(-1.5deg) scaleY(0.99);
+  }
+  100% {
+    transform: rotate(0) scaleY(1);
+  }
+}
+
+/* Needs pathLength="1" on the path (StrandGlyph) so dasharray 1 = the whole strand. */
 .hair-type[aria-pressed='true'] .hair-type__strand path {
   stroke-width: 2.2;
   stroke-dasharray: 1;

@@ -74,7 +74,15 @@ function pathFor(code: string): string {
 export function StrandGlyph({ code, className }: { code: string; className?: string }) {
   return (
     <svg className={className} viewBox={`0 0 ${W} ${H}`} width={W} height={H} aria-hidden="true">
-      <path d={pathFor(code)} fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
+      <path
+        d={pathFor(code)}
+        pathLength={1}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={1.8}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   )
 }
