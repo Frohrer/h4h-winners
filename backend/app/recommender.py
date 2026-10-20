@@ -16,7 +16,7 @@ from app.catalog import Catalog, get_catalog
 from app.engine import query
 from app.engine.needs import needs_for
 from app.engine.reviews import ReviewIndex, load_reviews
-from app.engine.scoring import Line, analyze, explain, score
+from app.engine.scoring import Delivery, analyze, delivery, explain, quick_score, score
 from app.engine.vocab import Condition
 from app.models import (
     Environment,
@@ -108,7 +108,7 @@ class GraphRecommender:
     def __init__(self, catalog: Catalog, reviews: ReviewIndex):
         self.catalog = catalog
         self.reviews = reviews
-        self.lines: dict[str, list[Line]] = {
+        self.lines = {
             p.id: analyze(
                 (
                     catalog.ingredients[e.ingredient_id].name,
@@ -119,14 +119,23 @@ class GraphRecommender:
             )
             for p in catalog.products.values()
         }
+        self.deliveries: dict[str, Delivery] = {
+            pid: delivery(lines) for pid, lines in self.lines.items()
+        }
         self.kinds = {
             p.id: query.kind_of(f"{p.category} {p.name}")
             for p in catalog.products.values()
+        }
+        self.formula_weights = {
+            p.id: self._compute_weights(p) for p in catalog.products.values()
         }
 
     # --- formula similarity ---------------------------------------------------
 
     def _weights(self, product: Product) -> dict[str, float]:
+        return self.formula_weights[product.id]
+
+    def _compute_weights(self, product: Product) -> dict[str, float]:
         weights = {}
         for entry in product.formula:
             if self.catalog.ingredients[entry.ingredient_id].is_base:
@@ -219,7 +228,8 @@ class GraphRecommender:
             conditions=conditions,
         )
 
-        results = []
+        # Score everything cheaply, then explain only what will be shown.
+        ranked: list[tuple[float, Product, list[str]]] = []
         for product in self.catalog.products.values():
             # People already have these; suggesting them back is noise.
             if product.id in owned_ids:
@@ -231,14 +241,13 @@ class GraphRecommender:
             if wanted_types and product.hair_types and not made_for:
                 continue
 
-            total, contributions = score(self.lines[product.id], needs, conditions)
-            ingredient_reasons, warnings = explain(contributions, needs)
+            total = quick_score(self.deliveries[product.id], needs, conditions)
             # Short, direct signals first; ingredient reasons fill the remaining slots.
-            reasons = []
+            signals = []
 
             if made_for:
                 total += MADE_FOR_WEIGHT * len(made_for) / len(wanted_types)
-                reasons.append(f"Made for {', '.join(sorted(made_for))}")
+                signals.append(f"Made for {', '.join(sorted(made_for))}")
 
             evidence = self.reviews.evidence(
                 product.id, request.hair_types, request.porosity
@@ -246,35 +255,38 @@ class GraphRecommender:
             if evidence:
                 total += REVIEW_WEIGHT * evidence.score
                 if evidence.summary:
-                    reasons.append(evidence.summary)
+                    signals.append(evidence.summary)
 
             if words:
                 text = self._searchable_text(product)
                 hits = [w for w in words if _stem(w) in text]
                 if hits:
                     total += SEARCH_HIT_WEIGHT * len(hits) / len(words)
-                    reasons.append("Matches " + ", ".join(f"“{w}”" for w in hits))
+                    signals.append("Matches " + ", ".join(f"“{w}”" for w in hits))
 
             if liked:
                 best = max(liked, key=lambda o: self._formula_similarity(product, o))
                 sim = self._formula_similarity(product, best)
                 if sim > SIMILAR_TO_LIKED_MIN:
                     total += SIMILAR_TO_LIKED_WEIGHT * sim
-                    reasons.append(f"Similar formula to {best.name}")
+                    signals.append(f"Similar formula to {best.name}")
 
-            reasons += ingredient_reasons
+            ranked.append((total, product, signals))
 
+        ranked.sort(key=lambda r: -r[0])
+        results = []
+        for total, product, signals in ranked[: request.limit]:
+            _, contributions = score(self.lines[product.id], needs, conditions)
+            ingredient_reasons, warnings = explain(contributions, needs)
             results.append(
                 Recommendation(
                     product=self.catalog.summary(product),
                     score=round(total, 3),
-                    reasons=reasons[:MAX_REASONS],
+                    reasons=(signals + ingredient_reasons)[:MAX_REASONS],
                     warnings=warnings,
                 )
             )
-
-        results.sort(key=lambda r: -r.score)
-        return results[: request.limit]
+        return results
 
 
 @lru_cache

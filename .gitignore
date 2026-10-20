@@ -76,3 +76,4 @@ Thumbs.db
 # Third-party reviews and product data: never commit (this repo is public).
 # Also holds data/generated/, the catalog and review signals built from it.
 /data/
+.claude/worktrees/

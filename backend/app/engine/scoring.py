@@ -82,6 +82,44 @@ def score(
     return sum(c.points for c in out), out
 
 
+@dataclass(frozen=True)
+class Delivery:
+    """What a product delivers per need, worked out once per product.
+
+    Scoring with it gives the same number as score(), without walking the
+    ingredients again for every request.
+    """
+
+    base: dict[str, float]
+    by_condition: dict[str, dict[str, float]]
+
+
+def delivery(lines: list[Line]) -> Delivery:
+    base: dict[str, float] = {}
+    by_condition: dict[str, dict[str, float]] = {}
+    for line in lines:
+        if line.group is None:
+            continue
+        for need, effect in GROUP_EFFECTS[line.group].items():
+            base[need] = base.get(need, 0) + line.weight * effect
+        for condition, groups in CONDITION_GROUP_EFFECTS.items():
+            for need, effect in groups.get(line.group, {}).items():
+                extra = by_condition.setdefault(condition, {})
+                extra[need] = extra.get(need, 0) + line.weight * effect
+    return Delivery(base, by_condition)
+
+
+def quick_score(
+    d: Delivery, needs: Needs, conditions: Iterable[Condition] = ()
+) -> float:
+    norm = sum(abs(w) for w in needs.weights.values()) or 1
+    total = sum(w * d.base.get(need, 0) for need, w in needs.weights.items())
+    for c in conditions:
+        extra = d.by_condition.get(c, {})
+        total += sum(w * extra.get(need, 0) for need, w in needs.weights.items())
+    return total / norm
+
+
 def _join(names: list[str]) -> str:
     """Joins up to two names; later ones lowercased unless they're acronyms (BTMS)."""
     rest = [n if n[:2].isupper() else n[:1].lower() + n[1:] for n in names[1:2]]

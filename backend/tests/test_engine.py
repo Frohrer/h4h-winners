@@ -7,7 +7,7 @@ from app.engine import query
 from app.engine.ingredient_groups import classify
 from app.engine.needs import needs_for
 from app.engine.reviews import ReviewIndex, ReviewSignal
-from app.engine.scoring import analyze, explain, score
+from app.engine.scoring import analyze, delivery, explain, quick_score, score
 from app.environment import dew_point_band
 from app.models import Environment, RecommendationRequest
 from app.recommender import GraphRecommender, conditions_from
@@ -248,3 +248,20 @@ def test_query_kind_filters_results():
     request = RecommendationRequest(hair_types=["3B"], query="leave-in")
     results = GraphRecommender(catalog, ReviewIndex([])).recommend(request, None)
     assert {r.product.category for r in results} == {"Leave-in conditioner"}
+
+
+@pytest.mark.parametrize(
+    "hair_types, conditions",
+    [(["4C"], []), (["1A"], ["humid"]), (["3B", "3C"], ["very_dry_air", "cold"])],
+)
+def test_quick_score_matches_the_full_score_for_every_seed_product(
+    hair_types, conditions
+):
+    n = needs_for(
+        hair_types, porosity="high", goals=["define_curls"], conditions=conditions
+    )
+    for product_id in catalog.products:
+        lines = lines_of(product_id)
+        assert quick_score(delivery(lines), n, conditions) == pytest.approx(
+            score(lines, n, conditions)[0]
+        )
