@@ -11,13 +11,21 @@ knowledge lives in app/engine/rules.py and app/engine/ingredient_groups.py.
 import re
 from dataclasses import dataclass
 from functools import lru_cache
-from typing import Protocol
+from typing import NamedTuple, Protocol
 
 from app.catalog import Catalog, get_catalog
 from app.engine import query
 from app.engine.needs import Needs, needs_for
 from app.engine.reviews import ReviewIndex, load_reviews
-from app.engine.scoring import Delivery, analyze, delivery, explain, quick_score, score
+from app.engine.scoring import (
+    Delivery,
+    analyze,
+    delivery,
+    explain,
+    position_weight,
+    quick_score,
+    score,
+)
 from app.engine.vocab import Condition
 from app.models import (
     Environment,
@@ -29,10 +37,16 @@ from app.models import (
 )
 
 
+class Ranking(NamedTuple):
+    results: list[Recommendation]
+    # Every eligible product, not just the request.limit that were explained.
+    total: int
+
+
 class Recommender(Protocol):
     def recommend(
         self, request: RecommendationRequest, environment: Environment | None
-    ) -> list[Recommendation]:
+    ) -> Ranking:
         """Rank products for a person's hair types, liked/current products, free-text query,
         and current conditions where they are (None if location is off or the lookup failed).
         request.location is still available for anything beyond current weather,
@@ -40,7 +54,7 @@ class Recommender(Protocol):
         ...
 
     def similar_products(self, product_id: str, limit: int) -> list[SimilarProduct]:
-        """Products whose ingredient blend and concentrations are closest, any category.
+        """Products whose ingredients and their label order are closest, any category.
 
         "Similar" means similar formula on purpose. An earlier version also had
         a category-first "alternatives" list; showing both on one page read as
@@ -128,7 +142,6 @@ class GraphRecommender:
                 (
                     catalog.ingredients[e.ingredient_id].name,
                     catalog.ingredients[e.ingredient_id].inci,
-                    e.concentration_pct,
                 )
                 for e in p.formula
             )
@@ -151,17 +164,16 @@ class GraphRecommender:
         return self.formula_weights[product.id]
 
     def _compute_weights(self, product: Product) -> dict[str, float]:
-        weights = {}
-        for entry in product.formula:
-            if self.catalog.ingredients[entry.ingredient_id].is_base:
-                continue
-            # Missing concentrations count as a trace amount so presence still matters.
-            weights[entry.ingredient_id] = entry.concentration_pct or 0.5
-        return weights
+        """Ingredient id -> weight by place on the label, in label order."""
+        return {
+            entry.ingredient_id: position_weight(i)
+            for i, entry in enumerate(product.formula)
+            if not self.catalog.ingredients[entry.ingredient_id].is_base
+        }
 
     def _formula_similarity(self, a: Product, b: Product) -> float:
-        # Weighted Jaccard: shared ingredients count by the smaller of the two
-        # concentrations, so 12% shea vs 1% shea is a weak match, not a strong one.
+        # Weighted Jaccard: shared ingredients count by the lower of their two label
+        # spots, so shea second on one label and last on another is a weak match.
         wa, wb = self._weights(a), self._weights(b)
         keys = wa.keys() | wb.keys()
         if not keys:
@@ -171,18 +183,12 @@ class GraphRecommender:
         return overlap / union
 
     def _shared(self, a: Product, b: Product) -> list[SharedIngredient]:
-        wa, wb = self._weights(a), self._weights(b)
-        conc_a = {e.ingredient_id: e.concentration_pct for e in a.formula}
-        conc_b = {e.ingredient_id: e.concentration_pct for e in b.formula}
-        shared = sorted(wa.keys() & wb.keys(), key=lambda k: -min(wa[k], wb[k]))
+        """Ingredients in both, in the order they appear on a's label."""
+        wb = self._weights(b)
         return [
-            SharedIngredient(
-                ingredient_id=k,
-                name=self.catalog.ingredients[k].name,
-                this_pct=conc_a[k],
-                other_pct=conc_b[k],
-            )
-            for k in shared
+            SharedIngredient(ingredient_id=k, name=self.catalog.ingredients[k].name)
+            for k in self._weights(a)
+            if k in wb
         ]
 
     def similar_products(self, product_id: str, limit: int) -> list[SimilarProduct]:
@@ -325,7 +331,7 @@ class GraphRecommender:
 
     def recommend(
         self, request: RecommendationRequest, environment: Environment | None
-    ) -> list[Recommendation]:
+    ) -> Ranking:
         ask = self._ask(request, environment)
         # Score everything cheaply, then explain only what will be shown.
         ranked = [
@@ -334,10 +340,11 @@ class GraphRecommender:
             if self._eligible(product, ask)
         ]
         ranked.sort(key=lambda r: -r[0])
-        return [
+        results = [
             self._explained(total, product, signals, ask)
             for total, signals, product in ranked[: request.limit]
         ]
+        return Ranking(results, len(ranked))
 
 
 @lru_cache

@@ -97,9 +97,6 @@ export function ProductPage() {
 
       <section className="product__section" aria-labelledby="similar-heading">
         <h2 id="similar-heading">Similar products</h2>
-        <p className="section-intro">
-          Products with the most ingredients in common, weighted by how much of each they contain.
-        </p>
         {similar.data && <SimilarProducts items={similar.data} />}
       </section>
     </article>

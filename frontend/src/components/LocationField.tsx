@@ -63,31 +63,13 @@ export function LocationField() {
     )
   }
 
-  if (profile.detecting) {
-    return (
-      <div className="location muted">
-        <PinIcon />
-        Finding your area
-      </div>
-    )
-  }
-
   return (
     <div className="location">
       <PinIcon />
-      <span className="muted">
-        {pref.mode === 'off'
-          ? 'Location is off, so results don’t account for your climate.'
-          : 'We couldn’t detect where you are.'}
-      </span>
+      <span className="muted">Location is off, so results don’t account for your climate.</span>
       <button type="button" className="link-button" onClick={() => setEditing(true)}>
         Choose a city
       </button>
-      {pref.mode === 'off' && (
-        <button type="button" className="link-button" onClick={() => profile.setLocation({ mode: 'detect' })}>
-          Detect my location
-        </button>
-      )}
     </div>
   )
 }

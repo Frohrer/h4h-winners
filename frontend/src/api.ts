@@ -52,7 +52,5 @@ export const api = {
       body: JSON.stringify(body),
     }),
 
-  detectLocation: () => request<Location | null>('/api/location'),
-
   searchLocations: (q: string) => request<Location[]>(`/api/locations?${new URLSearchParams({ q })}`),
 }

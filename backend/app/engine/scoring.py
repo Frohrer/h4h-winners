@@ -30,17 +30,14 @@ def position_weight(i: int) -> float:
     return 1 / (1 + i / 3)
 
 
-def analyze(entries: Iterable[tuple[str, str, float | None]]) -> list[Line]:
-    """entries: (display name, INCI name, concentration % or None) in label order."""
+def analyze(entries: Iterable[tuple[str, str]]) -> list[Line]:
+    """entries: (display name, INCI name) in label order."""
     entries = list(entries)
-    if entries and all(pct is not None for _, _, pct in entries):
-        raw = [pct for _, _, pct in entries]
-    else:
-        raw = [position_weight(i) for i in range(len(entries))]
+    raw = [position_weight(i) for i in range(len(entries))]
     total = sum(raw) or 1
     return [
         Line(name=name, group=classify(inci), weight=w / total)
-        for (name, inci, _), w in zip(entries, raw, strict=True)
+        for (name, inci), w in zip(entries, raw, strict=True)
     ]
 
 

@@ -570,6 +570,13 @@ main {
   letter-spacing: -0.015em;
 }
 
+.results__more,
+.ingredients__more {
+  display: flex;
+  justify-content: center;
+  margin-top: 32px;
+}
+
 .results[aria-busy='true'] .grid {
   opacity: 0.55;
   transition: opacity 150ms;
@@ -836,12 +843,6 @@ main {
   letter-spacing: -0.01em;
 }
 
-.section-intro {
-  max-width: 64ch;
-  margin: -6px 0 20px;
-  color: var(--muted);
-}
-
 .section-tools {
   display: flex;
   justify-content: flex-end;
@@ -917,7 +918,7 @@ main {
 
 .ingredient summary {
   display: grid;
-  grid-template-columns: minmax(0, 2fr) minmax(0, 1.3fr) minmax(0, 2fr) 4.5rem;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
   align-items: center;
   gap: 16px;
   padding: 12px 0;
@@ -952,28 +953,6 @@ main {
 .ingredient__function {
   color: var(--muted);
   font-size: 14px;
-}
-
-.ingredient__bar {
-  height: 6px;
-  border-radius: 3px;
-  background: var(--surface);
-  overflow: hidden;
-}
-
-.ingredient__bar > span {
-  display: block;
-  height: 100%;
-  border-radius: 3px;
-  background: var(--ink);
-}
-
-.ingredient__bar > span.is-base {
-  background: var(--line);
-}
-
-.ingredient__pct {
-  text-align: right;
 }
 
 .ingredient__body {
@@ -1148,26 +1127,12 @@ main {
   }
 
   .ingredient summary {
-    grid-template-columns: minmax(0, 1fr) 4.5rem;
-    gap: 4px 12px;
-  }
-
-  /* Explicit placement: auto-flow puts the percentage on its own row after the full-width bar. */
-  .ingredient__pct {
-    grid-row: 1;
-    grid-column: 2;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 4px;
   }
 
   .ingredient__function {
-    grid-row: 2;
-    grid-column: 1;
     padding-left: 1.25em;
-  }
-
-  .ingredient__bar {
-    grid-row: 3;
-    grid-column: 1 / -1;
-    margin-left: 1.25em;
   }
 }
 
@@ -1267,12 +1232,6 @@ main {
   font-size: 24px;
   font-weight: 600;
   letter-spacing: -0.015em;
-}
-
-.data__section h3 {
-  margin: 32px 0 8px;
-  font-size: 18px;
-  font-weight: 600;
 }
 
 .data__body {
