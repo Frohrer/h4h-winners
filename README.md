@@ -30,7 +30,7 @@ cd frontend && npm run build && npm run lint
 
 ## Plugging in the real recommender
 
-Implement the `Recommender` protocol in `backend/app/recommender.py` (three methods: `recommend`, `similar_formulas`, `similar_products`) and return it from `get_recommender()`. Routes, the UI, and the API contract stay the same. Each `recommend` call receives:
+Implement the `Recommender` protocol in `backend/app/recommender.py` (two methods: `recommend` for the finder, and `similar_products`, which ranks by formula similarity, meaning shared ingredients weighted by concentration) and return it from `get_recommender()`. Routes, the UI, and the API contract stay the same. Each `recommend` call receives:
 
 - `hair_types`, `liked_product_ids`, `current_product_ids`, and free-text `query`
 - `location` (or `null` if the person turned it off)

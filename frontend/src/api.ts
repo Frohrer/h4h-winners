@@ -3,10 +3,9 @@ import type {
   Location,
   ProductDetail,
   ProductSummary,
-  Recommendation,
   RecommendationRequest,
   RecommendationResponse,
-  SimilarFormula,
+  SimilarProduct,
 } from './types'
 
 export class ApiError extends Error {
@@ -44,11 +43,8 @@ export const api = {
 
   product: (id: string) => request<ProductDetail>(`/api/products/${encodeURIComponent(id)}`),
 
-  similarFormulas: (id: string) =>
-    request<SimilarFormula[]>(`/api/products/${encodeURIComponent(id)}/similar-formulas`),
-
   similarProducts: (id: string) =>
-    request<Recommendation[]>(`/api/products/${encodeURIComponent(id)}/similar`),
+    request<SimilarProduct[]>(`/api/products/${encodeURIComponent(id)}/similar`),
 
   recommend: (body: RecommendationRequest) =>
     request<RecommendationResponse>('/api/recommendations', {

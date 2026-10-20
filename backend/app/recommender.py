@@ -2,7 +2,7 @@
 
 The real recommendation system plugs in by implementing `Recommender` and
 returning it from get_recommender() (or via app.dependency_overrides in tests).
-Nothing else in the app needs to change: routes call only these three methods.
+Nothing else in the app needs to change: routes call only these two methods.
 
 StubRecommender is deliberately naive (keyword prefix matching, weighted
 ingredient overlap) so the UI has believable results to render. Don't tune it;
@@ -21,7 +21,7 @@ from app.models import (
     Recommendation,
     RecommendationRequest,
     SharedIngredient,
-    SimilarFormula,
+    SimilarProduct,
 )
 
 
@@ -35,12 +35,13 @@ class Recommender(Protocol):
         e.g. regional water hardness."""
         ...
 
-    def similar_formulas(self, product_id: str, limit: int) -> list[SimilarFormula]:
-        """Products whose ingredient blend and concentrations are closest, any category."""
-        ...
+    def similar_products(self, product_id: str, limit: int) -> list[SimilarProduct]:
+        """Products whose ingredient blend and concentrations are closest, any category.
 
-    def similar_products(self, product_id: str, limit: int) -> list[Recommendation]:
-        """Alternatives to a product: same job, same hair types, related formula."""
+        "Similar" means similar formula on purpose. An earlier version also had
+        a category-first "alternatives" list; showing both on one page read as
+        two overlapping lists with no clear difference, so they were merged.
+        """
         ...
 
 
@@ -116,7 +117,7 @@ class StubRecommender:
             for k in shared
         ]
 
-    def similar_formulas(self, product_id: str, limit: int) -> list[SimilarFormula]:
+    def similar_products(self, product_id: str, limit: int) -> list[SimilarProduct]:
         target = self.catalog.get(product_id)
         if target is None:
             return []
@@ -128,48 +129,13 @@ class StubRecommender:
         scored = [s for s in scored if s[0] > 0]
         scored.sort(key=lambda s: -s[0])
         return [
-            SimilarFormula(
+            SimilarProduct(
                 product=self.catalog.summary(other),
                 similarity=round(sim, 3),
                 shared=self._shared(target, other),
             )
             for sim, other in scored[:limit]
         ]
-
-    # --- product-to-product -----------------------------------------------------
-
-    def similar_products(self, product_id: str, limit: int) -> list[Recommendation]:
-        target = self.catalog.get(product_id)
-        if target is None:
-            return []
-        target_types = set(target.hair_types)
-        results = []
-        for other in self.catalog.products.values():
-            if other.id == target.id:
-                continue
-            same_category = other.category == target.category
-            shared_types = target_types & set(other.hair_types)
-            type_overlap = len(shared_types) / len(target_types | set(other.hair_types))
-            formula = self._formula_similarity(target, other)
-            # Category dominates so this section reads as "alternatives to this
-            # product"; ingredient-driven matches have their own section.
-            score = 0.45 * same_category + 0.3 * type_overlap + 0.25 * formula
-            if score <= 0.2:
-                continue
-            reasons = []
-            if same_category:
-                reasons.append(f"Also a {target.category.lower()}")
-            if shared_types:
-                reasons.append(f"Made for {', '.join(sorted(shared_types))}")
-            results.append(
-                Recommendation(
-                    product=self.catalog.summary(other),
-                    score=round(score, 3),
-                    reasons=reasons,
-                )
-            )
-        results.sort(key=lambda r: -r.score)
-        return results[:limit]
 
     # --- personalized search ----------------------------------------------------
 

@@ -55,7 +55,7 @@ export interface SharedIngredient {
   other_pct: number | null
 }
 
-export interface SimilarFormula {
+export interface SimilarProduct {
   product: ProductSummary
   similarity: number
   shared: SharedIngredient[]

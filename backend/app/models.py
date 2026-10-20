@@ -127,10 +127,10 @@ class SharedIngredient(BaseModel):
     other_pct: float | None
 
 
-class SimilarFormula(BaseModel):
+class SimilarProduct(BaseModel):
     product: ProductSummary
-    similarity: float  # 0..1
-    shared: list[SharedIngredient]
+    similarity: float  # 0..1, shown to people as "% formula match"
+    shared: list[SharedIngredient]  # most-shared first
 
 
 class Recommendation(BaseModel):

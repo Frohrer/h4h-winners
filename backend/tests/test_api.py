@@ -15,7 +15,7 @@ from app.models import (
     Location,
     Recommendation,
     RecommendationRequest,
-    SimilarFormula,
+    SimilarProduct,
 )
 from app.recommender import get_recommender
 
@@ -138,27 +138,20 @@ def test_product_detail_orders_formula_by_concentration():
 def test_unknown_product_is_404():
     assert client.get("/api/products/does-not-exist").status_code == 404
     assert client.get("/api/products/does-not-exist/similar").status_code == 404
-    assert (
-        client.get("/api/products/does-not-exist/similar-formulas").status_code == 404
-    )
 
 
-def test_similar_formulas_exclude_self_and_report_shared_ingredients():
-    body = client.get(
-        "/api/products/coilwell-whipped-shea-curl-cream/similar-formulas"
-    ).json()
+def test_similar_products_rank_by_formula_and_report_shared_ingredients():
+    body = client.get("/api/products/coilwell-whipped-shea-curl-cream/similar").json()
     assert body
     assert all(r["product"]["id"] != "coilwell-whipped-shea-curl-cream" for r in body)
     sims = [r["similarity"] for r in body]
     assert sims == sorted(sims, reverse=True)
+    # Ranked by formula, not category: other kinds of product can match.
+    assert {r["product"]["category"] for r in body} - {"Curl cream"}
+    # Every card shows a price.
+    assert all(r["product"]["price_from"] is not None for r in body)
     # Water is a base ingredient; it would otherwise dominate every comparison.
     assert all(s["ingredient_id"] != "water" for r in body for s in r["shared"])
-
-
-def test_similar_products_exclude_self():
-    body = client.get("/api/products/sunday-gentle-lather-shampoo/similar").json()
-    assert body
-    assert all(r["product"]["id"] != "sunday-gentle-lather-shampoo" for r in body)
 
 
 def test_recommendations_only_return_matching_hair_types():
@@ -214,10 +207,7 @@ class FixedRecommender:
             )
         ]
 
-    def similar_formulas(self, product_id: str, limit: int) -> list[SimilarFormula]:
-        return []
-
-    def similar_products(self, product_id: str, limit: int) -> list[Recommendation]:
+    def similar_products(self, product_id: str, limit: int) -> list[SimilarProduct]:
         return []
 
 

@@ -10,10 +10,9 @@ from app.models import (
     Location,
     ProductDetail,
     ProductSummary,
-    Recommendation,
     RecommendationRequest,
     RecommendationResponse,
-    SimilarFormula,
+    SimilarProduct,
 )
 from app.recommender import Recommender, get_recommender
 
@@ -59,24 +58,13 @@ def product_detail(product_id: str, catalog: CatalogDep) -> ProductDetail:
     return catalog.detail(_product_or_404(catalog, product_id))
 
 
-@app.get("/api/products/{product_id}/similar-formulas")
-def similar_formulas(
-    product_id: str,
-    catalog: CatalogDep,
-    recommender: RecommenderDep,
-    limit: int = Query(default=3, ge=1, le=20),
-) -> list[SimilarFormula]:
-    _product_or_404(catalog, product_id)
-    return recommender.similar_formulas(product_id, limit)
-
-
 @app.get("/api/products/{product_id}/similar")
 def similar_products(
     product_id: str,
     catalog: CatalogDep,
     recommender: RecommenderDep,
     limit: int = Query(default=6, ge=1, le=20),
-) -> list[Recommendation]:
+) -> list[SimilarProduct]:
     _product_or_404(catalog, product_id)
     return recommender.similar_products(product_id, limit)
 

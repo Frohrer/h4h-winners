@@ -3,9 +3,8 @@ import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { api, ApiError } from '../api'
 import { IngredientList } from '../components/IngredientList'
 import { ProductImage } from '../components/ProductImage'
-import { ProductTile } from '../components/ProductTile'
 import { SaveButtons } from '../components/SaveButtons'
-import { SimilarFormulas } from '../components/SimilarFormulas'
+import { SimilarProducts } from '../components/SimilarProducts'
 import { WhereToBuy } from '../components/WhereToBuy'
 import { useProfile } from '../profile'
 import { useAsync } from '../useAsync'
@@ -18,7 +17,6 @@ export function ProductPage() {
   const routerLocation = useLocation()
 
   const product = useAsync(() => api.product(id), [id])
-  const formulas = useAsync(() => api.similarFormulas(id), [id])
   const similar = useAsync(() => api.similarProducts(id), [id])
 
   // Clicking a similar product swaps the page in place; start it at the top.
@@ -95,22 +93,12 @@ export function ProductPage() {
         <IngredientList formula={p.formula} />
       </section>
 
-      <section className="product__section" aria-labelledby="formulas-heading">
-        <h2 id="formulas-heading">Similar formulas</h2>
+      <section className="product__section" aria-labelledby="similar-heading">
+        <h2 id="similar-heading">Similar products</h2>
         <p className="section-intro">
           Products with the most ingredients in common, weighted by how much of each they contain.
         </p>
-        {formulas.data && <SimilarFormulas items={formulas.data} thisName={p.name} />}
-      </section>
-
-      <section className="product__section" aria-labelledby="similar-heading">
-        <h2 id="similar-heading">Similar products</h2>
-        {similar.data && similar.data.length === 0 && <p className="muted">No close alternatives yet.</p>}
-        <div className="grid">
-          {similar.data?.map((r) => (
-            <ProductTile key={r.product.id} product={r.product} reasons={r.reasons} />
-          ))}
-        </div>
+        {similar.data && <SimilarProducts items={similar.data} />}
       </section>
     </article>
   )

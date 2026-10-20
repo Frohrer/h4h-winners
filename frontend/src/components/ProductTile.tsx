@@ -1,10 +1,18 @@
+import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import type { ProductSummary } from '../types'
 import { formatPrice } from '../format'
 import { ProductImage } from './ProductImage'
 import { FavoriteToggle } from './SaveButtons'
 
-export function ProductTile({ product, reasons }: { product: ProductSummary; reasons?: string[] }) {
+interface Props {
+  product: ProductSummary
+  reasons?: string[]
+  /** Extra detail under the price, e.g. the ingredient comparison on similar products. */
+  children?: ReactNode
+}
+
+export function ProductTile({ product, reasons, children }: Props) {
   return (
     <article className="tile">
       <div className="tile__media">
@@ -18,8 +26,12 @@ export function ProductTile({ product, reasons }: { product: ProductSummary; rea
         <Link to={`/products/${product.id}`}>{product.name}</Link>
       </h3>
       <p className="tile__meta">
-        {product.category}
-        {product.price_from != null && <span className="tile__price">from {formatPrice(product.price_from)}</span>}
+        {product.price_from != null && (
+          <span className="tile__price">
+            from <strong>{formatPrice(product.price_from)}</strong>
+          </span>
+        )}
+        <span>{product.category}</span>
       </p>
       {reasons && reasons.length > 0 && (
         <ul className="reasons">
@@ -28,6 +40,7 @@ export function ProductTile({ product, reasons }: { product: ProductSummary; rea
           ))}
         </ul>
       )}
+      {children}
     </article>
   )
 }
