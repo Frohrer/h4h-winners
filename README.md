@@ -2,21 +2,21 @@
 
 Hair product recommendations by hair type (1A–4C), the products you already like, what you're looking for, and the weather where you are. Every product page shows where it's sold, its full ingredient list with what each ingredient does, products with similar formulas, and similar products.
 
-The catalog is **fictional seed data** for now (`backend/app/data/catalog.json`), and recommendations come from a deliberately naive stub until the real recommender is ready.
+Without the scraped data the app runs on a small **fictional seed catalog** (`backend/app/data/catalog.json`). With it, the catalog and review signals are built from real products and reviews (see [Data](#data)).
 
 | Directory | What it is |
 |---|---|
 | `frontend/` | React + Vite + TypeScript UI |
-| `backend/` | FastAPI app: catalog, recommender interface, location + weather |
-| `scraper/` | Data collection into `data/` (see `scraper/README.md`) |
+| `backend/` | FastAPI app: catalog, recommender, location + weather |
+| `backend/app/engine/` | The recommendation engine and its rule tables |
+| `backend/scripts/` | Build the catalog and review signals from `data/` |
 
 ## Run it
 
-Two terminals:
+Everything runs in Docker:
 
 ```sh
-cd backend && uv run fastapi dev app/main.py     # API on :8000
-cd frontend && npm install && npm run dev        # UI on http://localhost:5173
+docker compose up --build     # UI on http://localhost:5173, API on :8000
 ```
 
 Vite proxies `/api` to the backend, so open the UI on port 5173 only.
@@ -24,21 +24,41 @@ Vite proxies `/api` to the backend, so open the UI on port 5173 only.
 Tests and lint:
 
 ```sh
-cd backend && uv run pytest && uv run ruff check . && uv run ruff format --check .
-cd frontend && npm run build && npm run lint
+docker compose run --rm --no-deps backend sh -c 'uv run pytest && uv run ruff check . && uv run ruff format --check .'
+docker compose run --rm --no-deps frontend sh -c 'npm run build && npm run lint'
 ```
 
-## Plugging in the real recommender
+## How recommendations work
 
-Implement the `Recommender` protocol in `backend/app/recommender.py` (two methods: `recommend` for the finder, and `similar_products`, which ranks by formula similarity, meaning shared ingredients weighted by concentration) and return it from `get_recommender()`. Routes, the UI, and the API contract stay the same. Each `recommend` call receives:
+```
+hair types, porosity, strands ─┐
+what you typed                 ├─▶ needs ─▶ ingredient groups ─▶ products
+today's weather                ┘                                   ▲
+                       reviews from people with similar hair ──────┘
+```
 
-- `hair_types`, `liked_product_ids`, `current_product_ids`, and free-text `query`
-- `location` (or `null` if the person turned it off)
-- `environment`: current temperature, humidity, and dew point at that location, looked up by the API before calling you
+1. **Needs.** Hair type, porosity, strand thickness, the search text ("wash day", "defined curls") and the weather each add weight to needs like `moisture`, `seal` or `frizz_control` (`app/engine/rules.py`, tables A and B).
+2. **Ingredients.** Every ingredient is sorted into one of 16 groups by its INCI name (`app/engine/ingredient_groups.py`): humectants, butters, rich oils, light oils, proteins, hold polymers, strong and gentle soaps, silicones, and so on. Bigger amounts count more; without percentages, earlier on the label counts more.
+3. **Score.** Each group helps or hurts certain needs (table C). Weather changes some of that: glycerin causes frizz in humid air and dries hair out in very dry air.
+4. **Reviews.** Reviews from people with the same hair type count fully, a neighbouring type or the same family (curly, coily) counts less, and a handful barely counts while dozens count a lot.
+5. **Reasons.** Each result says why in plain words ("Shea butter and castor oil lock moisture in for today's dry air") and warns about what to watch out for ("Glycerin can cause frizz in today's humid air").
 
-Return `reasons` with each result. The UI shows them under every product so people can see why it was suggested.
+`GraphRecommender` in `backend/app/recommender.py` implements the `Recommender` protocol, so routes and the UI don't depend on how it works.
 
-To swap the seed catalog for scraped data, replace `load_catalog()` in `backend/app/catalog.py` with a source that produces the same `Product` / `Ingredient` records (`backend/app/models.py`).
+## Data
+
+The scraped products and reviews are third-party content and are **not in this repo**. Download them and unpack into `data/` at the repo root (git-ignored):
+
+- Strand hair data (Amazon 2023, brand sites, Open Beauty Facts): _link to be added_
+- Retail reviews (Ulta, Walmart): _link to be added_, unpacked into `data/retail/`
+
+Then build the catalog and review signals (written to `data/generated/`, which the backend loads at start):
+
+```sh
+docker compose run --rm --no-deps backend uv run python scripts/build_catalog.py
+docker compose run --rm --no-deps backend uv run python scripts/build_reviews.py
+docker compose up
+```
 
 ## Location and weather
 
