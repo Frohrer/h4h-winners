@@ -16,7 +16,7 @@ from app.models import (
 )
 from app.recommender import Recommender, get_recommender
 
-app = FastAPI(title="Strand API")
+app = FastAPI(title="strands.hair API")
 
 CatalogDep = Annotated[Catalog, Depends(get_catalog)]
 RecommenderDep = Annotated[Recommender, Depends(get_recommender)]

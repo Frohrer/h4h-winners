@@ -1,4 +1,4 @@
-# Strand
+# strands.hair
 
 Hair product recommendations by hair type (1A–4C), the products you already like, what you're looking for, and the weather where you are. Every product page shows where it's sold, its full ingredient list with what each ingredient does, products with similar formulas, and similar products.
 
