@@ -5,8 +5,9 @@ import type { Location } from '../types'
 import { SearchCombobox } from './SearchCombobox'
 
 /**
- * One line under the search box. Location is optional and always visible, so
- * people can see what's being used and change or remove it in one click.
+ * Location is optional and always visible, so people can see what's being
+ * used and change or remove it in one click. The "why we ask" copy lives with
+ * the field label in FinderPage.
  */
 export function LocationField() {
   const profile = useProfile()
@@ -76,8 +77,8 @@ export function LocationField() {
       <PinIcon />
       <span className="muted">
         {pref.mode === 'off'
-          ? 'Location is off, so results ignore your local climate.'
-          : "Add your location so results account for your local climate."}
+          ? 'Location is off, so results don’t account for your climate.'
+          : 'We couldn’t detect where you are.'}
       </span>
       <button type="button" className="link-button" onClick={() => setEditing(true)}>
         Choose a city

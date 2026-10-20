@@ -4,7 +4,6 @@ import { api } from '../api'
 import { EnvironmentNote } from '../components/EnvironmentNote'
 import { HairTypePicker } from '../components/HairTypePicker'
 import { LocationField } from '../components/LocationField'
-import { ProductPicker } from '../components/ProductPicker'
 import { ProductTile } from '../components/ProductTile'
 import { formatList } from '../format'
 import { useProfile } from '../profile'
@@ -25,13 +24,10 @@ export function FinderPage() {
 
   const hairTypes = useAsync(api.hairTypes, [])
 
-  const ownedIds = [...new Set([...profile.using, ...profile.favorites])]
-  const owned = useAsync(() => api.productsByIds(ownedIds), [ownedIds.join(',')])
-
-  // Favorites/using feed the ranking, but only re-rank on this page's explicit
-  // inputs (picker, chip removal, search). The recommender skips products you
-  // already have, so re-ranking on every heart click would yank the hearted
-  // tile out from under the cursor.
+  // Favorites and "I use this" still feed the ranking, but only take effect on
+  // the next search. The recommender skips products you already have, so
+  // re-ranking on every heart click would yank the hearted tile out from
+  // under the cursor.
   const [rankKey, setRankKey] = useState(0)
   const rerank = () => setRankKey((k) => k + 1)
 
@@ -86,32 +82,12 @@ export function FinderPage() {
 
       <section className="finder__inputs">
         <div className="field">
-          <h2 className="field__label">Products you like or use</h2>
-          <div className="chips">
-            {owned.data?.map((p) => (
-              <span key={p.id} className="chip">
-                {p.name}
-                <button
-                  type="button"
-                  className="chip__remove"
-                  aria-label={`Remove ${p.name} from my products`}
-                  onClick={() => {
-                    profile.remove(p.id)
-                    rerank()
-                  }}
-                >
-                  ×
-                </button>
-              </span>
-            ))}
-            <ProductPicker
-              excludeIds={ownedIds}
-              onPick={(p) => {
-                profile.toggle('favorites', p.id)
-                rerank()
-              }}
-            />
-          </div>
+          <h2 className="field__label">Where you live</h2>
+          <p className="field__hint">
+            We use this to check your local climate. Humidity and dew point change how products behave in your hair,
+            especially gels and anything with glycerin.
+          </p>
+          <LocationField />
         </div>
 
         <form className="field" onSubmit={submit} role="search">
@@ -131,7 +107,6 @@ export function FinderPage() {
               Find products
             </button>
           </div>
-          <LocationField />
         </form>
       </section>
 
