@@ -1,0 +1,19 @@
+[project]
+name = "strand-api"
+version = "0.1.0"
+description = "API for Strand: hair-type-aware product search, product details, and the recommender hand-off"
+requires-python = ">=3.13"
+dependencies = [
+    "fastapi[standard]>=0.155.0",
+    "httpx>=0.28.1",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+    "ruff>=0.17.1",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]

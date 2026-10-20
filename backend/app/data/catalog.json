@@ -1,0 +1,569 @@
+{
+  "hair_types": [
+    { "code": "1A", "family": "Straight", "description": "Fine, completely straight, and hard to curl." },
+    { "code": "1B", "family": "Straight", "description": "Straight with a little body and some bend at the ends." },
+    { "code": "1C", "family": "Straight", "description": "Straight but coarser, with a slight bend and some frizz." },
+    { "code": "2A", "family": "Wavy", "description": "Loose, barely-there S-waves that sit close to the head." },
+    { "code": "2B", "family": "Wavy", "description": "Defined S-waves from the mid-lengths down, with some frizz on top." },
+    { "code": "2C", "family": "Wavy", "description": "Thick, well-defined waves that start near the roots." },
+    { "code": "3A", "family": "Curly", "description": "Large, loose spirals about the width of sidewalk chalk." },
+    { "code": "3B", "family": "Curly", "description": "Springy ringlets about the width of a marker." },
+    { "code": "3C", "family": "Curly", "description": "Tight corkscrews about the width of a pencil or straw." },
+    { "code": "4A", "family": "Coily", "description": "Dense, springy S-shaped coils about the width of a crochet needle." },
+    { "code": "4B", "family": "Coily", "description": "Tightly packed coils that bend in sharp, Z-shaped angles." },
+    { "code": "4C", "family": "Coily", "description": "The tightest coils, with a zigzag pattern and the most shrinkage." }
+  ],
+
+  "ingredients": [
+    { "id": "water", "name": "Water", "inci": "Aqua", "function": "Solvent", "is_base": true,
+      "what_it_does": "The base that dissolves and carries everything else.",
+      "why_its_added": "Most creams, shampoos, and conditioners are mostly water. It lets the other ingredients spread evenly through your hair." },
+    { "id": "glycerin", "name": "Glycerin", "inci": "Glycerin", "function": "Humectant",
+      "what_it_does": "Pulls water from the air into your hair.",
+      "why_its_added": "Keeps hair hydrated between washes. Can feel sticky in very humid or very dry weather." },
+    { "id": "aloe", "name": "Aloe vera juice", "inci": "Aloe Barbadensis Leaf Juice", "function": "Humectant",
+      "what_it_does": "Hydrates hair and soothes the scalp. Slightly acidic.",
+      "why_its_added": "Adds lightweight moisture and helps smooth the outer layer of each strand." },
+    { "id": "shea", "name": "Shea butter", "inci": "Butyrospermum Parkii (Shea) Butter", "function": "Emollient",
+      "what_it_does": "A rich plant butter that coats and softens strands.",
+      "why_its_added": "Seals in moisture and reduces breakage, especially in thick or coily hair." },
+    { "id": "mango", "name": "Mango butter", "inci": "Mangifera Indica Seed Butter", "function": "Emollient",
+      "what_it_does": "A lighter butter than shea that melts on contact with skin.",
+      "why_its_added": "Softens and seals with less heaviness than shea." },
+    { "id": "coconut", "name": "Coconut oil", "inci": "Cocos Nucifera Oil", "function": "Emollient",
+      "what_it_does": "One of the few oils that can soak into the hair shaft.",
+      "why_its_added": "Reduces protein loss during washing. Some coarse hair feels stiff with it." },
+    { "id": "jojoba", "name": "Jojoba oil", "inci": "Simmondsia Chinensis Seed Oil", "function": "Emollient",
+      "what_it_does": "A liquid wax that closely resembles your scalp's natural oil.",
+      "why_its_added": "Adds shine and light conditioning without feeling greasy." },
+    { "id": "argan", "name": "Argan oil", "inci": "Argania Spinosa Kernel Oil", "function": "Emollient",
+      "what_it_does": "A light oil rich in vitamin E and fatty acids.",
+      "why_its_added": "Adds shine and softness and tames frizz." },
+    { "id": "castor", "name": "Castor oil", "inci": "Ricinus Communis Seed Oil", "function": "Emollient",
+      "what_it_does": "A very thick, sticky oil.",
+      "why_its_added": "Seals moisture, gives edges hold, and makes products feel richer." },
+    { "id": "avocado", "name": "Avocado oil", "inci": "Persea Gratissima Oil", "function": "Emollient",
+      "what_it_does": "A rich oil full of fatty acids that soften strands.",
+      "why_its_added": "Conditions dry hair and adds slip." },
+    { "id": "beeswax", "name": "Beeswax", "inci": "Cera Alba", "function": "Film former",
+      "what_it_does": "A natural wax that stiffens as it cools.",
+      "why_its_added": "Holds hair in place and seals edges and ends." },
+    { "id": "cetearyl", "name": "Cetearyl alcohol", "inci": "Cetearyl Alcohol", "function": "Fatty alcohol",
+      "what_it_does": "A waxy, non-drying alcohol made from plant fats.",
+      "why_its_added": "Thickens creams and makes hair feel soft. Unlike drying alcohols, it doesn't strip moisture." },
+    { "id": "btms", "name": "BTMS", "inci": "Behentrimonium Methosulfate", "function": "Conditioning agent",
+      "what_it_does": "A gentle conditioner that clings to damaged spots on the hair.",
+      "why_its_added": "Gives slip for detangling. Despite the name, it isn't a sulfate." },
+    { "id": "cetrimonium", "name": "Cetrimonium chloride", "inci": "Cetrimonium Chloride", "function": "Conditioning agent",
+      "what_it_does": "A positively charged conditioner that cancels static.",
+      "why_its_added": "Makes detangling easier and calms frizz." },
+    { "id": "wheat_protein", "name": "Hydrolyzed wheat protein", "inci": "Hydrolyzed Wheat Protein", "function": "Protein",
+      "what_it_does": "Small protein pieces that patch gaps in the hair's surface.",
+      "why_its_added": "Strengthens damaged hair. Too much can leave hair stiff or brittle." },
+    { "id": "rice_protein", "name": "Hydrolyzed rice protein", "inci": "Hydrolyzed Rice Protein", "function": "Protein",
+      "what_it_does": "A light plant protein that adds body.",
+      "why_its_added": "Strengthens and thickens fine strands without heavy buildup." },
+    { "id": "rice_water", "name": "Fermented rice water", "inci": "Lactobacillus/Rice Ferment Filtrate", "function": "Protein",
+      "what_it_does": "Water left from fermenting rice, carrying starches and amino acids.",
+      "why_its_added": "Strengthens strands and adds smoothness." },
+    { "id": "panthenol", "name": "Panthenol", "inci": "Panthenol", "function": "Humectant",
+      "what_it_does": "Provitamin B5. Holds onto water and adds shine.",
+      "why_its_added": "Boosts moisture and makes strands feel thicker." },
+    { "id": "honey", "name": "Honey", "inci": "Mel", "function": "Humectant",
+      "what_it_does": "Draws in moisture and softens.",
+      "why_its_added": "Adds hydration and shine." },
+    { "id": "flaxseed", "name": "Flaxseed extract", "inci": "Linum Usitatissimum Seed Extract", "function": "Film former",
+      "what_it_does": "A natural gel made from flax seeds.",
+      "why_its_added": "Gives soft, flexible hold and curl definition." },
+    { "id": "marshmallow", "name": "Marshmallow root extract", "inci": "Althaea Officinalis Root Extract", "function": "Slip agent",
+      "what_it_does": "A plant extract that turns slippery in water.",
+      "why_its_added": "Helps fingers and combs glide through knots." },
+    { "id": "sci", "name": "Sodium cocoyl isethionate", "inci": "Sodium Cocoyl Isethionate", "function": "Cleanser",
+      "what_it_does": "A mild cleanser made from coconut fatty acids.",
+      "why_its_added": "Cleans hair and scalp with less stripping than sulfates." },
+    { "id": "capb", "name": "Cocamidopropyl betaine", "inci": "Cocamidopropyl Betaine", "function": "Cleanser",
+      "what_it_does": "A gentle co-cleanser that boosts lather.",
+      "why_its_added": "Softens harsher cleansers and makes shampoo feel creamier." },
+    { "id": "decyl", "name": "Decyl glucoside", "inci": "Decyl Glucoside", "function": "Cleanser",
+      "what_it_does": "A very mild cleanser made from sugar.",
+      "why_its_added": "Cleans gently in co-washes and low-lather shampoos." },
+    { "id": "xanthan", "name": "Xanthan gum", "inci": "Xanthan Gum", "function": "Thickener",
+      "what_it_does": "A natural gum that thickens liquids.",
+      "why_its_added": "Gives gels and creams their texture and keeps them from separating." },
+    { "id": "guar", "name": "Guar conditioner", "inci": "Guar Hydroxypropyltrimonium Chloride", "function": "Conditioning agent",
+      "what_it_does": "A conditioning ingredient made from guar beans.",
+      "why_its_added": "Leaves a light conditioning film behind after rinsing." },
+    { "id": "rosemary", "name": "Rosemary leaf extract", "inci": "Rosmarinus Officinalis Leaf Extract", "function": "Scalp care",
+      "what_it_does": "An herbal extract with a fresh scent.",
+      "why_its_added": "Gives a soothing, refreshing feel on the scalp." },
+    { "id": "tea_tree", "name": "Tea tree oil", "inci": "Melaleuca Alternifolia Leaf Oil", "function": "Scalp care",
+      "what_it_does": "An essential oil with a sharp, medicinal scent.",
+      "why_its_added": "Helps with flaking and itchy scalp. Can irritate in high amounts." },
+    { "id": "apple_cider", "name": "Apple cider vinegar", "inci": "Pyrus Malus Fruit Vinegar", "function": "pH adjuster",
+      "what_it_does": "A mild fruit acid.",
+      "why_its_added": "Clears buildup and leaves hair smoother and shinier." },
+    { "id": "alcohol_denat", "name": "Denatured alcohol", "inci": "Alcohol Denat.", "function": "Solvent",
+      "what_it_does": "A quick-evaporating alcohol.",
+      "why_its_added": "Helps foams and sprays dry fast. Can be drying if it's high on the list." },
+    { "id": "phenoxyethanol", "name": "Phenoxyethanol", "inci": "Phenoxyethanol", "function": "Preservative",
+      "what_it_does": "Stops bacteria and mold from growing in the product.",
+      "why_its_added": "Needed in any water-based product so it stays safe after you open it." },
+    { "id": "citric", "name": "Citric acid", "inci": "Citric Acid", "function": "pH adjuster",
+      "what_it_does": "A mild acid from citrus fruit.",
+      "why_its_added": "Keeps the product at a hair-friendly pH, which helps strands lie flat and look shiny." },
+    { "id": "fragrance", "name": "Fragrance", "inci": "Parfum", "function": "Fragrance",
+      "what_it_does": "A blend of scent ingredients.",
+      "why_its_added": "Adds scent. Brands don't have to list what's in it, which matters if your scalp is sensitive." }
+  ],
+
+  "products": [
+    {
+      "id": "coilwell-whipped-shea-curl-cream", "name": "Whipped Shea Curl Cream", "brand": "Coilwell",
+      "category": "Curl cream", "color": "#D9A15B",
+      "description": "A thick, whipped cream that defines coils and keeps them soft for days. Smooth it through damp hair before a twist-out or wash-and-go.",
+      "hair_types": ["3C", "4A", "4B", "4C"],
+      "tags": ["moisture", "definition", "shrinkage", "twist-out"],
+      "formula": [
+        { "ingredient_id": "water", "concentration_pct": 56 },
+        { "ingredient_id": "shea", "concentration_pct": 12 },
+        { "ingredient_id": "aloe", "concentration_pct": 8 },
+        { "ingredient_id": "glycerin", "concentration_pct": 5 },
+        { "ingredient_id": "cetearyl", "concentration_pct": 4.5 },
+        { "ingredient_id": "coconut", "concentration_pct": 4 },
+        { "ingredient_id": "btms", "concentration_pct": 3 },
+        { "ingredient_id": "castor", "concentration_pct": 2 },
+        { "ingredient_id": "panthenol", "concentration_pct": 1 },
+        { "ingredient_id": "phenoxyethanol", "concentration_pct": 0.9 },
+        { "ingredient_id": "xanthan", "concentration_pct": 0.5 },
+        { "ingredient_id": "fragrance", "concentration_pct": 0.5 },
+        { "ingredient_id": "citric", "concentration_pct": 0.1 }
+      ],
+      "listings": [
+        { "retailer": "Coil & Co.", "price_usd": 16.99, "size": "8 oz", "url": "https://example.com/coil-and-co/whipped-shea-curl-cream" },
+        { "retailer": "Strand Supply", "price_usd": 15.49, "size": "8 oz", "url": "https://example.com/strand-supply/whipped-shea-curl-cream" },
+        { "retailer": "Coilwell", "price_usd": 17.00, "size": "8 oz", "url": "https://example.com/coilwell/whipped-shea-curl-cream" },
+        { "retailer": "Coilwell", "price_usd": 28.00, "size": "16 oz", "url": "https://example.com/coilwell/whipped-shea-curl-cream-16" }
+      ]
+    },
+    {
+      "id": "coilwell-aloe-slip-leave-in", "name": "Aloe Slip Leave-In", "brand": "Coilwell",
+      "category": "Leave-in conditioner", "color": "#8FBF9F",
+      "description": "A milky leave-in that adds slip for detangling and a light layer of moisture. Spray or rake it through damp hair.",
+      "hair_types": ["3B", "3C", "4A", "4B", "4C"],
+      "tags": ["moisture", "slip", "detangling", "lightweight"],
+      "formula": [
+        { "ingredient_id": "water", "concentration_pct": 72 },
+        { "ingredient_id": "aloe", "concentration_pct": 10 },
+        { "ingredient_id": "glycerin", "concentration_pct": 4 },
+        { "ingredient_id": "btms", "concentration_pct": 2.5 },
+        { "ingredient_id": "marshmallow", "concentration_pct": 2 },
+        { "ingredient_id": "cetearyl", "concentration_pct": 2 },
+        { "ingredient_id": "jojoba", "concentration_pct": 1.5 },
+        { "ingredient_id": "panthenol", "concentration_pct": 1 },
+        { "ingredient_id": "phenoxyethanol", "concentration_pct": 0.9 },
+        { "ingredient_id": "guar", "concentration_pct": 0.5 },
+        { "ingredient_id": "fragrance", "concentration_pct": 0.3 },
+        { "ingredient_id": "citric", "concentration_pct": 0.1 }
+      ],
+      "listings": [
+        { "retailer": "Coil & Co.", "price_usd": 12.49, "size": "10 oz", "url": "https://example.com/coil-and-co/aloe-slip-leave-in" },
+        { "retailer": "Brightway Pharmacy", "price_usd": 11.99, "size": "10 oz", "url": "https://example.com/brightway/aloe-slip-leave-in" }
+      ]
+    },
+    {
+      "id": "coilwell-protein-rescue-mask", "name": "Protein Rescue Mask", "brand": "Coilwell",
+      "category": "Deep conditioner", "color": "#B9834F",
+      "description": "A weekly mask with wheat and rice proteins for hair that snaps easily or feels mushy when wet. Leave it on for 15 minutes under a warm towel.",
+      "hair_types": ["3A", "3B", "3C", "4A", "4B", "4C"],
+      "tags": ["strength", "breakage", "repair", "wash day"],
+      "formula": [
+        { "ingredient_id": "water", "concentration_pct": 62 },
+        { "ingredient_id": "cetearyl", "concentration_pct": 7 },
+        { "ingredient_id": "shea", "concentration_pct": 5 },
+        { "ingredient_id": "btms", "concentration_pct": 4 },
+        { "ingredient_id": "wheat_protein", "concentration_pct": 4 },
+        { "ingredient_id": "avocado", "concentration_pct": 4 },
+        { "ingredient_id": "glycerin", "concentration_pct": 3 },
+        { "ingredient_id": "rice_protein", "concentration_pct": 2 },
+        { "ingredient_id": "panthenol", "concentration_pct": 2 },
+        { "ingredient_id": "phenoxyethanol", "concentration_pct": 0.9 },
+        { "ingredient_id": "fragrance", "concentration_pct": 0.4 },
+        { "ingredient_id": "citric", "concentration_pct": 0.1 }
+      ],
+      "listings": [
+        { "retailer": "Coil & Co.", "price_usd": 19.99, "size": "12 oz", "url": "https://example.com/coil-and-co/protein-rescue-mask" },
+        { "retailer": "Strand Supply", "price_usd": 18.50, "size": "12 oz", "url": "https://example.com/strand-supply/protein-rescue-mask" },
+        { "retailer": "Coilwell", "price_usd": 21.00, "size": "12 oz", "url": "https://example.com/coilwell/protein-rescue-mask" }
+      ]
+    },
+    {
+      "id": "coilwell-wash-day-co-wash", "name": "Wash Day Co-Wash", "brand": "Coilwell",
+      "category": "Co-wash", "color": "#A8C3D6",
+      "description": "A cleansing conditioner for washing between shampoos. Lifts dirt and sweat with almost no lather, so coils stay soft.",
+      "hair_types": ["3B", "3C", "4A", "4B", "4C"],
+      "tags": ["cleansing", "moisture", "gentle", "wash day"],
+      "formula": [
+        { "ingredient_id": "water", "concentration_pct": 76 },
+        { "ingredient_id": "cetearyl", "concentration_pct": 5 },
+        { "ingredient_id": "aloe", "concentration_pct": 4 },
+        { "ingredient_id": "btms", "concentration_pct": 3 },
+        { "ingredient_id": "decyl", "concentration_pct": 3 },
+        { "ingredient_id": "coconut", "concentration_pct": 2 },
+        { "ingredient_id": "shea", "concentration_pct": 2 },
+        { "ingredient_id": "glycerin", "concentration_pct": 2 },
+        { "ingredient_id": "marshmallow", "concentration_pct": 1 },
+        { "ingredient_id": "phenoxyethanol", "concentration_pct": 0.9 },
+        { "ingredient_id": "fragrance", "concentration_pct": 0.4 },
+        { "ingredient_id": "citric", "concentration_pct": 0.1 }
+      ],
+      "listings": [
+        { "retailer": "Coil & Co.", "price_usd": 11.99, "size": "12 oz", "url": "https://example.com/coil-and-co/wash-day-co-wash" },
+        { "retailer": "Brightway Pharmacy", "price_usd": 11.49, "size": "12 oz", "url": "https://example.com/brightway/wash-day-co-wash" }
+      ]
+    },
+    {
+      "id": "sunday-gentle-lather-shampoo", "name": "Gentle Lather Shampoo", "brand": "Sunday Wash Co.",
+      "category": "Shampoo", "color": "#7FA7C9",
+      "description": "A low-lather, sulfate-free shampoo that cleans without leaving waves and curls squeaky or stripped.",
+      "hair_types": ["2A", "2B", "2C", "3A", "3B", "3C", "4A", "4B", "4C"],
+      "tags": ["cleansing", "sulfate-free", "gentle", "wash day"],
+      "formula": [
+        { "ingredient_id": "water", "concentration_pct": 68 },
+        { "ingredient_id": "sci", "concentration_pct": 9 },
+        { "ingredient_id": "capb", "concentration_pct": 7 },
+        { "ingredient_id": "aloe", "concentration_pct": 5 },
+        { "ingredient_id": "glycerin", "concentration_pct": 3 },
+        { "ingredient_id": "phenoxyethanol", "concentration_pct": 0.9 },
+        { "ingredient_id": "xanthan", "concentration_pct": 0.6 },
+        { "ingredient_id": "panthenol", "concentration_pct": 0.5 },
+        { "ingredient_id": "fragrance", "concentration_pct": 0.5 },
+        { "ingredient_id": "guar", "concentration_pct": 0.4 },
+        { "ingredient_id": "citric", "concentration_pct": 0.3 }
+      ],
+      "listings": [
+        { "retailer": "Brightway Pharmacy", "price_usd": 9.99, "size": "12 oz", "url": "https://example.com/brightway/gentle-lather-shampoo" },
+        { "retailer": "Shelf Market", "price_usd": 8.99, "size": "12 oz", "url": "https://example.com/shelf-market/gentle-lather-shampoo" }
+      ]
+    },
+    {
+      "id": "sunday-rosemary-clarifying-shampoo", "name": "Rosemary Clarifying Shampoo", "brand": "Sunday Wash Co.",
+      "category": "Shampoo", "color": "#6E9E7A",
+      "description": "A deeper, fragrance-free clean for once or twice a month, when products start to build up. Follow with conditioner.",
+      "hair_types": ["1A", "1B", "1C", "2A", "2B", "2C", "3A", "3B", "3C", "4A", "4B", "4C"],
+      "tags": ["clarifying", "buildup", "scalp", "fragrance-free"],
+      "formula": [
+        { "ingredient_id": "water", "concentration_pct": 70 },
+        { "ingredient_id": "capb", "concentration_pct": 8 },
+        { "ingredient_id": "decyl", "concentration_pct": 7 },
+        { "ingredient_id": "apple_cider", "concentration_pct": 3 },
+        { "ingredient_id": "glycerin", "concentration_pct": 2 },
+        { "ingredient_id": "rosemary", "concentration_pct": 1 },
+        { "ingredient_id": "phenoxyethanol", "concentration_pct": 0.9 },
+        { "ingredient_id": "citric", "concentration_pct": 0.5 },
+        { "ingredient_id": "tea_tree", "concentration_pct": 0.3 }
+      ],
+      "listings": [
+        { "retailer": "Brightway Pharmacy", "price_usd": 10.99, "size": "12 oz", "url": "https://example.com/brightway/rosemary-clarifying-shampoo" },
+        { "retailer": "Shelf Market", "price_usd": 9.49, "size": "12 oz", "url": "https://example.com/shelf-market/rosemary-clarifying-shampoo" },
+        { "retailer": "Strand Supply", "price_usd": 10.25, "size": "12 oz", "url": "https://example.com/strand-supply/rosemary-clarifying-shampoo" }
+      ]
+    },
+    {
+      "id": "sunday-detangling-conditioner", "name": "Detangling Conditioner", "brand": "Sunday Wash Co.",
+      "category": "Conditioner", "color": "#C9A7D6",
+      "description": "A rinse-out conditioner with lots of slip, made for finger detangling in the shower.",
+      "hair_types": ["2C", "3A", "3B", "3C", "4A", "4B", "4C"],
+      "tags": ["detangling", "slip", "softness", "wash day"],
+      "formula": [
+        { "ingredient_id": "water", "concentration_pct": 74 },
+        { "ingredient_id": "cetearyl", "concentration_pct": 6 },
+        { "ingredient_id": "btms", "concentration_pct": 4 },
+        { "ingredient_id": "marshmallow", "concentration_pct": 3 },
+        { "ingredient_id": "avocado", "concentration_pct": 2 },
+        { "ingredient_id": "glycerin", "concentration_pct": 2 },
+        { "ingredient_id": "coconut", "concentration_pct": 1.5 },
+        { "ingredient_id": "cetrimonium", "concentration_pct": 1 },
+        { "ingredient_id": "phenoxyethanol", "concentration_pct": 0.9 },
+        { "ingredient_id": "panthenol", "concentration_pct": 0.8 },
+        { "ingredient_id": "fragrance", "concentration_pct": 0.5 },
+        { "ingredient_id": "citric", "concentration_pct": 0.2 }
+      ],
+      "listings": [
+        { "retailer": "Brightway Pharmacy", "price_usd": 9.99, "size": "12 oz", "url": "https://example.com/brightway/detangling-conditioner" },
+        { "retailer": "Shelf Market", "price_usd": 8.99, "size": "12 oz", "url": "https://example.com/shelf-market/detangling-conditioner" },
+        { "retailer": "Coil & Co.", "price_usd": 10.49, "size": "12 oz", "url": "https://example.com/coil-and-co/detangling-conditioner" }
+      ]
+    },
+    {
+      "id": "baobab-flaxseed-defining-gel", "name": "Flaxseed Defining Gel", "brand": "Baobab Lane",
+      "category": "Gel", "color": "#B8C76A",
+      "description": "A clear flaxseed gel with flexible hold. Glaze it over a leave-in for defined wash-and-gos without crunch.",
+      "hair_types": ["2B", "2C", "3A", "3B", "3C", "4A", "4B", "4C"],
+      "tags": ["hold", "definition", "frizz", "wash-and-go"],
+      "formula": [
+        { "ingredient_id": "water", "concentration_pct": 80 },
+        { "ingredient_id": "flaxseed", "concentration_pct": 8 },
+        { "ingredient_id": "aloe", "concentration_pct": 5 },
+        { "ingredient_id": "glycerin", "concentration_pct": 3 },
+        { "ingredient_id": "xanthan", "concentration_pct": 1 },
+        { "ingredient_id": "phenoxyethanol", "concentration_pct": 0.9 },
+        { "ingredient_id": "panthenol", "concentration_pct": 0.5 },
+        { "ingredient_id": "castor", "concentration_pct": 0.5 },
+        { "ingredient_id": "fragrance", "concentration_pct": 0.2 }
+      ],
+      "listings": [
+        { "retailer": "Coil & Co.", "price_usd": 13.99, "size": "12 oz", "url": "https://example.com/coil-and-co/flaxseed-defining-gel" },
+        { "retailer": "Strand Supply", "price_usd": 12.99, "size": "12 oz", "url": "https://example.com/strand-supply/flaxseed-defining-gel" }
+      ]
+    },
+    {
+      "id": "baobab-castor-edge-control", "name": "Castor Edge Control", "brand": "Baobab Lane",
+      "category": "Edge control", "color": "#6B4A35",
+      "description": "A firm, water-free balm that lays edges and keeps sleek styles in place without flaking.",
+      "hair_types": ["3C", "4A", "4B", "4C"],
+      "tags": ["edges", "hold", "sleek styles"],
+      "formula": [
+        { "ingredient_id": "castor", "concentration_pct": 35 },
+        { "ingredient_id": "beeswax", "concentration_pct": 25 },
+        { "ingredient_id": "shea", "concentration_pct": 18 },
+        { "ingredient_id": "coconut", "concentration_pct": 12 },
+        { "ingredient_id": "jojoba", "concentration_pct": 8 },
+        { "ingredient_id": "rosemary", "concentration_pct": 1 },
+        { "ingredient_id": "fragrance", "concentration_pct": 1 }
+      ],
+      "listings": [
+        { "retailer": "Coil & Co.", "price_usd": 7.99, "size": "2.25 oz", "url": "https://example.com/coil-and-co/castor-edge-control" },
+        { "retailer": "Shelf Market", "price_usd": 6.99, "size": "2.25 oz", "url": "https://example.com/shelf-market/castor-edge-control" }
+      ]
+    },
+    {
+      "id": "baobab-mango-twist-butter", "name": "Mango Twist Butter", "brand": "Baobab Lane",
+      "category": "Hair butter", "color": "#F0B24A",
+      "description": "A dense, whipped butter for sealing ends and setting twist-outs and braid-outs. A little goes a long way.",
+      "hair_types": ["4A", "4B", "4C"],
+      "tags": ["sealing", "twist-out", "moisture", "dryness"],
+      "formula": [
+        { "ingredient_id": "mango", "concentration_pct": 30 },
+        { "ingredient_id": "shea", "concentration_pct": 28 },
+        { "ingredient_id": "castor", "concentration_pct": 12 },
+        { "ingredient_id": "coconut", "concentration_pct": 12 },
+        { "ingredient_id": "avocado", "concentration_pct": 8 },
+        { "ingredient_id": "jojoba", "concentration_pct": 6 },
+        { "ingredient_id": "beeswax", "concentration_pct": 3 },
+        { "ingredient_id": "fragrance", "concentration_pct": 1 }
+      ],
+      "listings": [
+        { "retailer": "Coil & Co.", "price_usd": 15.99, "size": "8 oz", "url": "https://example.com/coil-and-co/mango-twist-butter" },
+        { "retailer": "Strand Supply", "price_usd": 14.75, "size": "8 oz", "url": "https://example.com/strand-supply/mango-twist-butter" },
+        { "retailer": "Baobab Lane", "price_usd": 16.00, "size": "8 oz", "url": "https://example.com/baobab-lane/mango-twist-butter" }
+      ]
+    },
+    {
+      "id": "halo-weightless-wave-mousse", "name": "Weightless Wave Mousse", "brand": "Halo Botanics",
+      "category": "Mousse", "color": "#E6B3C3",
+      "description": "An airy foam that lifts roots and defines waves without weighing them down. Scrunch into damp hair and air-dry or diffuse.",
+      "hair_types": ["2A", "2B", "2C", "3A"],
+      "tags": ["volume", "lightweight", "definition", "frizz"],
+      "formula": [
+        { "ingredient_id": "water", "concentration_pct": 78 },
+        { "ingredient_id": "alcohol_denat", "concentration_pct": 6 },
+        { "ingredient_id": "aloe", "concentration_pct": 4 },
+        { "ingredient_id": "flaxseed", "concentration_pct": 2 },
+        { "ingredient_id": "glycerin", "concentration_pct": 2 },
+        { "ingredient_id": "rice_protein", "concentration_pct": 1.5 },
+        { "ingredient_id": "panthenol", "concentration_pct": 1 },
+        { "ingredient_id": "phenoxyethanol", "concentration_pct": 0.8 },
+        { "ingredient_id": "fragrance", "concentration_pct": 0.4 }
+      ],
+      "listings": [
+        { "retailer": "Brightway Pharmacy", "price_usd": 11.49, "size": "7 oz", "url": "https://example.com/brightway/weightless-wave-mousse" },
+        { "retailer": "Shelf Market", "price_usd": 10.99, "size": "7 oz", "url": "https://example.com/shelf-market/weightless-wave-mousse" }
+      ]
+    },
+    {
+      "id": "halo-jojoba-shine-oil", "name": "Jojoba Shine Oil", "brand": "Halo Botanics",
+      "category": "Hair oil", "color": "#D9C36A",
+      "description": "A light blend of jojoba and argan for shine and frizz control. Use a few drops on damp or dry ends.",
+      "hair_types": ["1A", "1B", "1C", "2A", "2B", "2C", "3A", "3B", "3C", "4A", "4B", "4C"],
+      "tags": ["shine", "sealing", "frizz", "lightweight"],
+      "formula": [
+        { "ingredient_id": "jojoba", "concentration_pct": 52 },
+        { "ingredient_id": "argan", "concentration_pct": 30 },
+        { "ingredient_id": "avocado", "concentration_pct": 15 },
+        { "ingredient_id": "rosemary", "concentration_pct": 2 },
+        { "ingredient_id": "fragrance", "concentration_pct": 1 }
+      ],
+      "listings": [
+        { "retailer": "Brightway Pharmacy", "price_usd": 14.99, "size": "2 oz", "url": "https://example.com/brightway/jojoba-shine-oil" },
+        { "retailer": "Strand Supply", "price_usd": 13.99, "size": "2 oz", "url": "https://example.com/strand-supply/jojoba-shine-oil" },
+        { "retailer": "Halo Botanics", "price_usd": 15.00, "size": "2 oz", "url": "https://example.com/halo-botanics/jojoba-shine-oil" }
+      ]
+    },
+    {
+      "id": "halo-featherlight-leave-in-spray", "name": "Featherlight Leave-In Spray", "brand": "Halo Botanics",
+      "category": "Leave-in conditioner", "color": "#A9D3D0",
+      "description": "A watery spray for fine waves and loose curls. Detangles and smooths without leaving residue.",
+      "hair_types": ["1C", "2A", "2B", "2C", "3A", "3B"],
+      "tags": ["lightweight", "frizz", "detangling", "smoothing"],
+      "formula": [
+        { "ingredient_id": "water", "concentration_pct": 86 },
+        { "ingredient_id": "aloe", "concentration_pct": 4 },
+        { "ingredient_id": "glycerin", "concentration_pct": 1.5 },
+        { "ingredient_id": "panthenol", "concentration_pct": 1 },
+        { "ingredient_id": "rice_protein", "concentration_pct": 1 },
+        { "ingredient_id": "phenoxyethanol", "concentration_pct": 0.9 },
+        { "ingredient_id": "cetrimonium", "concentration_pct": 0.8 },
+        { "ingredient_id": "argan", "concentration_pct": 0.5 },
+        { "ingredient_id": "fragrance", "concentration_pct": 0.3 },
+        { "ingredient_id": "citric", "concentration_pct": 0.1 }
+      ],
+      "listings": [
+        { "retailer": "Brightway Pharmacy", "price_usd": 10.49, "size": "8 oz", "url": "https://example.com/brightway/featherlight-leave-in-spray" },
+        { "retailer": "Shelf Market", "price_usd": 9.99, "size": "8 oz", "url": "https://example.com/shelf-market/featherlight-leave-in-spray" }
+      ]
+    },
+    {
+      "id": "moss-honey-hydration-mask", "name": "Honey Hydration Mask", "brand": "Moss & Marrow",
+      "category": "Deep conditioner", "color": "#D99A2B",
+      "description": "A rich honey and avocado mask for dry, brittle hair. It's protein-free, so you can use it every wash.",
+      "hair_types": ["3A", "3B", "3C", "4A", "4B", "4C"],
+      "tags": ["moisture", "dryness", "softness", "protein-free", "wash day"],
+      "formula": [
+        { "ingredient_id": "water", "concentration_pct": 63 },
+        { "ingredient_id": "cetearyl", "concentration_pct": 7 },
+        { "ingredient_id": "shea", "concentration_pct": 6 },
+        { "ingredient_id": "avocado", "concentration_pct": 5 },
+        { "ingredient_id": "btms", "concentration_pct": 4 },
+        { "ingredient_id": "honey", "concentration_pct": 4 },
+        { "ingredient_id": "glycerin", "concentration_pct": 4 },
+        { "ingredient_id": "aloe", "concentration_pct": 3 },
+        { "ingredient_id": "panthenol", "concentration_pct": 1 },
+        { "ingredient_id": "phenoxyethanol", "concentration_pct": 0.9 },
+        { "ingredient_id": "fragrance", "concentration_pct": 0.4 },
+        { "ingredient_id": "citric", "concentration_pct": 0.1 }
+      ],
+      "listings": [
+        { "retailer": "Coil & Co.", "price_usd": 18.99, "size": "10 oz", "url": "https://example.com/coil-and-co/honey-hydration-mask" },
+        { "retailer": "Moss & Marrow", "price_usd": 20.00, "size": "10 oz", "url": "https://example.com/moss-and-marrow/honey-hydration-mask" }
+      ]
+    },
+    {
+      "id": "moss-rice-water-strengthening-spray", "name": "Rice Water Strengthening Mist", "brand": "Moss & Marrow",
+      "category": "Treatment spray", "color": "#D8CDB4",
+      "description": "A fermented rice water mist for strengthening between washes. Use it two or three times a week on damp hair.",
+      "hair_types": ["2A", "2B", "2C", "3A", "3B", "3C", "4A", "4B", "4C"],
+      "tags": ["strength", "breakage", "shine", "lightweight"],
+      "formula": [
+        { "ingredient_id": "water", "concentration_pct": 70 },
+        { "ingredient_id": "rice_water", "concentration_pct": 20 },
+        { "ingredient_id": "aloe", "concentration_pct": 3 },
+        { "ingredient_id": "glycerin", "concentration_pct": 2 },
+        { "ingredient_id": "rice_protein", "concentration_pct": 1.5 },
+        { "ingredient_id": "panthenol", "concentration_pct": 1 },
+        { "ingredient_id": "phenoxyethanol", "concentration_pct": 0.9 },
+        { "ingredient_id": "rosemary", "concentration_pct": 0.5 },
+        { "ingredient_id": "fragrance", "concentration_pct": 0.2 },
+        { "ingredient_id": "citric", "concentration_pct": 0.1 }
+      ],
+      "listings": [
+        { "retailer": "Coil & Co.", "price_usd": 12.99, "size": "8 oz", "url": "https://example.com/coil-and-co/rice-water-strengthening-mist" },
+        { "retailer": "Strand Supply", "price_usd": 11.99, "size": "8 oz", "url": "https://example.com/strand-supply/rice-water-strengthening-mist" }
+      ]
+    },
+    {
+      "id": "moss-avocado-curl-custard", "name": "Avocado Curl Custard", "brand": "Moss & Marrow",
+      "category": "Curl cream", "color": "#7FA36B",
+      "description": "A jelly-cream hybrid with soft hold. Defines curls without the stiff cast of a gel.",
+      "hair_types": ["3A", "3B", "3C", "4A"],
+      "tags": ["definition", "softness", "hold", "frizz"],
+      "formula": [
+        { "ingredient_id": "water", "concentration_pct": 65 },
+        { "ingredient_id": "aloe", "concentration_pct": 8 },
+        { "ingredient_id": "flaxseed", "concentration_pct": 5 },
+        { "ingredient_id": "avocado", "concentration_pct": 5 },
+        { "ingredient_id": "shea", "concentration_pct": 4 },
+        { "ingredient_id": "glycerin", "concentration_pct": 4 },
+        { "ingredient_id": "cetearyl", "concentration_pct": 3 },
+        { "ingredient_id": "btms", "concentration_pct": 1.5 },
+        { "ingredient_id": "xanthan", "concentration_pct": 1 },
+        { "ingredient_id": "phenoxyethanol", "concentration_pct": 0.9 },
+        { "ingredient_id": "panthenol", "concentration_pct": 0.6 },
+        { "ingredient_id": "fragrance", "concentration_pct": 0.4 }
+      ],
+      "listings": [
+        { "retailer": "Coil & Co.", "price_usd": 14.49, "size": "8 oz", "url": "https://example.com/coil-and-co/avocado-curl-custard" },
+        { "retailer": "Shelf Market", "price_usd": 13.49, "size": "8 oz", "url": "https://example.com/shelf-market/avocado-curl-custard" }
+      ]
+    },
+    {
+      "id": "northfield-daily-volume-shampoo", "name": "Daily Volume Shampoo", "brand": "Northfield Naturals",
+      "category": "Shampoo", "color": "#9BB7D4",
+      "description": "A clear, everyday shampoo for fine hair that gets oily quickly. Lifts roots without drying out the ends.",
+      "hair_types": ["1A", "1B", "1C", "2A"],
+      "tags": ["volume", "oily scalp", "cleansing", "lightweight"],
+      "formula": [
+        { "ingredient_id": "water", "concentration_pct": 72 },
+        { "ingredient_id": "capb", "concentration_pct": 8 },
+        { "ingredient_id": "sci", "concentration_pct": 6 },
+        { "ingredient_id": "decyl", "concentration_pct": 4 },
+        { "ingredient_id": "aloe", "concentration_pct": 3 },
+        { "ingredient_id": "phenoxyethanol", "concentration_pct": 0.9 },
+        { "ingredient_id": "rice_protein", "concentration_pct": 0.8 },
+        { "ingredient_id": "panthenol", "concentration_pct": 0.5 },
+        { "ingredient_id": "fragrance", "concentration_pct": 0.5 },
+        { "ingredient_id": "rosemary", "concentration_pct": 0.3 },
+        { "ingredient_id": "citric", "concentration_pct": 0.3 }
+      ],
+      "listings": [
+        { "retailer": "Brightway Pharmacy", "price_usd": 7.99, "size": "13.5 oz", "url": "https://example.com/brightway/daily-volume-shampoo" },
+        { "retailer": "Shelf Market", "price_usd": 7.49, "size": "13.5 oz", "url": "https://example.com/shelf-market/daily-volume-shampoo" }
+      ]
+    },
+    {
+      "id": "northfield-silk-finish-conditioner", "name": "Silk Finish Conditioner", "brand": "Northfield Naturals",
+      "category": "Conditioner", "color": "#C7B9E8",
+      "description": "A light conditioner that smooths and detangles fine hair without flattening it.",
+      "hair_types": ["1A", "1B", "1C", "2A", "2B"],
+      "tags": ["smoothing", "lightweight", "frizz", "shine"],
+      "formula": [
+        { "ingredient_id": "water", "concentration_pct": 82 },
+        { "ingredient_id": "cetearyl", "concentration_pct": 4 },
+        { "ingredient_id": "aloe", "concentration_pct": 2 },
+        { "ingredient_id": "cetrimonium", "concentration_pct": 1.5 },
+        { "ingredient_id": "btms", "concentration_pct": 1.5 },
+        { "ingredient_id": "glycerin", "concentration_pct": 1.5 },
+        { "ingredient_id": "phenoxyethanol", "concentration_pct": 0.9 },
+        { "ingredient_id": "argan", "concentration_pct": 0.8 },
+        { "ingredient_id": "panthenol", "concentration_pct": 0.8 },
+        { "ingredient_id": "fragrance", "concentration_pct": 0.5 },
+        { "ingredient_id": "citric", "concentration_pct": 0.1 }
+      ],
+      "listings": [
+        { "retailer": "Brightway Pharmacy", "price_usd": 7.99, "size": "13.5 oz", "url": "https://example.com/brightway/silk-finish-conditioner" },
+        { "retailer": "Shelf Market", "price_usd": 7.49, "size": "13.5 oz", "url": "https://example.com/shelf-market/silk-finish-conditioner" }
+      ]
+    },
+    {
+      "id": "northfield-tea-tree-scalp-serum", "name": "Tea Tree Scalp Serum", "brand": "Northfield Naturals",
+      "category": "Scalp serum", "color": "#6FA89A",
+      "description": "A cooling, lightweight serum for itchy or flaky scalps. Part your hair and apply it straight to the scalp, including under braids.",
+      "hair_types": ["1A", "1B", "1C", "2A", "2B", "2C", "3A", "3B", "3C", "4A", "4B", "4C"],
+      "tags": ["scalp", "itchy scalp", "flaking", "protective styles"],
+      "formula": [
+        { "ingredient_id": "water", "concentration_pct": 80 },
+        { "ingredient_id": "aloe", "concentration_pct": 10 },
+        { "ingredient_id": "glycerin", "concentration_pct": 3 },
+        { "ingredient_id": "tea_tree", "concentration_pct": 1 },
+        { "ingredient_id": "rosemary", "concentration_pct": 1 },
+        { "ingredient_id": "panthenol", "concentration_pct": 1 },
+        { "ingredient_id": "jojoba", "concentration_pct": 1 },
+        { "ingredient_id": "phenoxyethanol", "concentration_pct": 0.9 },
+        { "ingredient_id": "citric", "concentration_pct": 0.1 }
+      ],
+      "listings": [
+        { "retailer": "Brightway Pharmacy", "price_usd": 12.99, "size": "2 oz", "url": "https://example.com/brightway/tea-tree-scalp-serum" },
+        { "retailer": "Strand Supply", "price_usd": 12.49, "size": "2 oz", "url": "https://example.com/strand-supply/tea-tree-scalp-serum" }
+      ]
+    }
+  ]
+}
