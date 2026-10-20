@@ -1,16 +1,18 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 
-// PLACEHOLDERS until the scrape lands. Replace with real figures, ideally
-// served from an /api/stats endpoint so this page can't drift from the data.
-// Everything rendered through <Ph> gets a dashed underline so placeholder
-// copy is obvious in demos and easy to find when swapping in real numbers.
+// Rounded down from the first full scrape (data/*/MANIFEST.json). Rounded on
+// purpose: counts move with every refresh, and the page shouldn't promise more
+// precision than a snapshot has. Ideally served from /api/stats later.
+// Brands stays vague because marketplace seller names inflate the raw count.
+// Sources are described by kind, not by name, by request.
 const STATS = {
-  products: 'XX,XXX',
-  brands: 'X,XXX',
-  reviews: 'X,XXX,XXX',
-  ingredients: 'X,XXX',
-  refreshDays: 'X',
+  reviews: '3 million',
+  products: '100,000',
+  brands: 'thousands of',
+  hairProfileReviews: '350,000',
+  ingredientLists: '2,800',
+  communityPosts: '130,000',
 }
 
 const RELEASE = {
@@ -24,19 +26,19 @@ const RELEASE = {
 // no retailer scraping. Keep this list in step with what scraper/ really collects.
 const SOURCES = [
   {
-    kind: 'Open datasets',
-    count: 'XX datasets',
-    takes: 'Ingredient lists from Open Beauty Facts, and ratings and reviews from the Amazon Reviews 2023 research dataset',
+    kind: 'Open research datasets',
+    count: 'Millions of reviews',
+    takes: 'Product ratings and reviews published for research, plus ingredient lists from an open product database',
   },
   {
     kind: 'Brand websites',
-    count: 'X,XXX brands',
-    takes: 'Product details, full ingredient lists, prices, and reviews from each brand’s public product pages',
+    count: 'About 80 brands',
+    takes: 'Product details, ingredient lists, prices, and reviews from brands’ own public product pages, including the hair type, porosity, and thickness reviewers report',
   },
   {
-    kind: 'Ingredient references',
-    count: 'XX sources',
-    takes: 'What each ingredient does and why formulators add it',
+    kind: 'Hair-care communities',
+    count: `${STATS.communityPosts}+ posts`,
+    takes: 'Public discussions where people describe their hair and what has and hasn’t worked for it',
   },
 ]
 
@@ -63,7 +65,7 @@ const SIGNALS = [
   },
   {
     name: 'What people say',
-    body: 'Ratings and reviews from people who have used each product, so a formula that looks right on paper also has to work in practice.',
+    body: 'Ratings and reviews from people who have used each product, so a formula that looks right on paper also has to work in practice. Many reviewers describe their own hair, so we can see how a product does on hair like yours.',
   },
   {
     name: 'What it costs',
@@ -103,9 +105,9 @@ export function DataPage() {
       <header className="data__hero">
         <h1 className="display">Every recommendation starts with the label.</h1>
         <p className="data__lead">
-          Strand reads the ingredient lists of <Ph>{STATS.products}</Ph> hair products from <Ph>{STATS.brands}</Ph>{' '}
-          brands, learns from <Ph>{STATS.reviews}</Ph> reviews, and explains <Ph>{STATS.ingredients}</Ph> ingredients
-          in plain language.
+          Strand learns from over {STATS.reviews} reviews of more than {STATS.products} hair products from{' '}
+          {STATS.brands} brands. In over {STATS.hairProfileReviews} of them, the reviewer tells us about their own hair:
+          its type, porosity, or thickness.
         </p>
       </header>
 
@@ -128,9 +130,9 @@ export function DataPage() {
       <section className="data__section" aria-labelledby="sources-heading">
         <h2 id="sources-heading">Where it comes from</h2>
         <p className="data__body">
-          We combine open research datasets with the public product pages brands publish themselves. We don’t scrape
-          stores whose terms forbid it, and we never keep reviewers’ names. The catalog refreshes every{' '}
-          <Ph>{STATS.refreshDays}</Ph> days, so formulas stay current when brands reformulate.
+          We combine open research datasets, public hair-care communities, and the product pages brands publish
+          themselves. We don’t scrape stores whose terms forbid it, and we never keep reviewers’ names. Full ingredient
+          lists cover {STATS.ingredientLists}+ products so far, and that number grows as we add brands.
         </p>
         <table className="sources">
           <thead className="visually-hidden">
@@ -144,9 +146,7 @@ export function DataPage() {
               <tr key={s.kind}>
                 <th scope="row">
                   {s.kind}
-                  <span className="muted">
-                    <Ph>{s.count}</Ph>
-                  </span>
+                  <span className="muted">{s.count}</span>
                 </th>
                 <td>{s.takes}</td>
               </tr>
