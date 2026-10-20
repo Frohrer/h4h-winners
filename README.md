@@ -47,10 +47,7 @@ today's weather                ┘                                   ▲
 
 ## Data
 
-The scraped products and reviews are third-party content and are **not in this repo**. Download them and unpack into `data/` at the repo root (git-ignored):
-
-- Strand hair data (Amazon 2023, brand sites, Open Beauty Facts): _link to be added_
-- Retail reviews (Ulta, Walmart): _link to be added_, unpacked into `data/retail/`
+The scraped products and reviews are third-party content and are **not in this repo**. Put them in `data/` at the repo root (git-ignored), with the retail reviews in `data/retail/`.
 
 Then build the catalog and review signals (written to `data/generated/`, which the backend loads at start):
 
