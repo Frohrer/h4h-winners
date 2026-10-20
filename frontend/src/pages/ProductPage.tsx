@@ -64,19 +64,21 @@ export function ProductPage() {
           <h1 className="product__name">{p.name}</h1>
           <p className="muted">{p.category}</p>
 
-          <div className="product__types">
-            <span className="muted">Made for</span>
-            <ul className="type-list">
-              {p.hair_types.map((code) => (
-                <li key={code} className={profile.hairTypes.includes(code) ? 'is-yours' : undefined}>
-                  {code}
-                  {profile.hairTypes.includes(code) && <span className="visually-hidden"> (your hair type)</span>}
-                </li>
-              ))}
-            </ul>
-          </div>
+          {p.hair_types.length > 0 && (
+            <div className="product__types">
+              <span className="muted">Made for</span>
+              <ul className="type-list">
+                {p.hair_types.map((code) => (
+                  <li key={code} className={profile.hairTypes.includes(code) ? 'is-yours' : undefined}>
+                    {code}
+                    {profile.hairTypes.includes(code) && <span className="visually-hidden"> (your hair type)</span>}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
-          <p className="product__description">{p.description}</p>
+          {p.description && <p className="product__description">{p.description}</p>}
           <SaveButtons productId={p.id} />
 
           <section className="product__section" aria-labelledby="buy-heading">
