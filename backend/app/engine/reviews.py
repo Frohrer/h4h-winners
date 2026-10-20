@@ -79,6 +79,44 @@ def _closeness(
     return w
 
 
+def _tally(
+    reviews: list[ReviewSignal], hair_types: list[str], porosity: str | None
+) -> tuple[float, float, dict[str, float]]:
+    """Total closeness, closeness-weighted sentiment, and closeness per need helped."""
+    weight = weighted = 0.0
+    helped: dict[str, float] = {}
+    for r in reviews:
+        w = _closeness(r, hair_types, porosity)
+        weight += w
+        weighted += w * r.sentiment
+        for need in r.helped:
+            helped[need] = helped.get(need, 0) + w
+    return weight, weighted, helped
+
+
+def _summary(
+    reviews: list[ReviewSignal],
+    same: list[ReviewSignal],
+    hair_types: list[str],
+    helped: dict[str, float],
+) -> str | None:
+    # Same-code reviewers when there are enough, else everyone in the asker's
+    # families ("3 of 4 reviewers with curly hair"), else no summary.
+    families = list(dict.fromkeys(map(family_of, hair_types)))
+    kin_family = [r for r in reviews if _family(r) in families]
+    use_same = len(same) >= QUOTE_SAME_TYPE_FROM or len(same) >= len(kin_family)
+    kin = same if use_same else kin_family
+    if not kin:
+        return None
+    liked = sum(1 for r in kin if r.sentiment > 0)
+    who = "/".join(hair_types) if use_same else "/".join(families).lower()
+    summary = f"{liked} of {len(kin)} reviewers with {who} hair liked it"
+    if helped:
+        top = max(helped, key=helped.get)
+        summary += f": it {HELPS[top]}"
+    return summary
+
+
 class ReviewIndex:
     def __init__(self, signals: list[ReviewSignal]):
         self.by_product: dict[str, list[ReviewSignal]] = {}
@@ -94,32 +132,12 @@ class ReviewIndex:
         hair_types = [t for t in hair_types if t in HAIR_TYPES]
         same = [r for r in reviews if r.hair_type in hair_types]
 
-        weight = weighted = 0.0
-        helped: dict[str, float] = {}
-        for r in reviews:
-            w = _closeness(r, hair_types, porosity)
-            weight += w
-            weighted += w * r.sentiment
-            for need in r.helped:
-                helped[need] = helped.get(need, 0) + w
+        weight, weighted, helped = _tally(reviews, hair_types, porosity)
         if weight == 0:
             return Evidence(len(reviews), len(same), 0.0, None)
 
         trust = weight / (weight + HALF_TRUST_AT)
-        # Same-code reviewers when there are enough, else everyone in the asker's
-        # families ("3 of 4 reviewers with curly hair"), else no summary.
-        summary = None
-        families = list(dict.fromkeys(map(family_of, hair_types)))
-        kin_family = [r for r in reviews if _family(r) in families]
-        use_same = len(same) >= QUOTE_SAME_TYPE_FROM or len(same) >= len(kin_family)
-        kin = same if use_same else kin_family
-        if kin:
-            liked = sum(1 for r in kin if r.sentiment > 0)
-            who = "/".join(hair_types) if use_same else "/".join(families).lower()
-            summary = f"{liked} of {len(kin)} reviewers with {who} hair liked it"
-            if helped:
-                top = max(helped, key=helped.get)
-                summary += f": it {HELPS[top]}"
+        summary = _summary(reviews, same, hair_types, helped)
         return Evidence(len(reviews), len(same), weighted / weight * trust, summary)
 
 

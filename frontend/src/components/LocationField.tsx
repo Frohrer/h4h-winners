@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { api } from '../api'
-import { useProfile } from '../profile'
+import { useProfile } from '../profileContext'
 import type { Location } from '../types'
 import { SearchCombobox } from './SearchCombobox'
 

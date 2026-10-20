@@ -176,6 +176,35 @@ def widgets(data: Path, stats: Counter) -> Rows:
             )
 
 
+def cells(value: str) -> list[str]:
+    """A "|"-joined CSV cell as its values: "3A|3B" → ["3A", "3B"]."""
+    return [v for v in value.split("|") if v]
+
+
+def needs_from_themes(themes: list[str], mapping: dict[str, str]) -> list[str]:
+    return list(dict.fromkeys(mapping[t] for t in themes if t in mapping))
+
+
+def retail_signal(row: dict, sentiment: float) -> dict | None:
+    family = RETAIL_FAMILY.get(row["retailer_hair_type"])
+    family = family or row["texture_best"].capitalize()
+    s = signal(
+        product_key("retail", row["product_id"]),
+        sentiment,
+        cells(row["curl_patterns"]),
+        [family],
+        cells(row["porosity"]),
+        cells(row["thickness"]),
+        "",
+        row["review_url"] or None,
+    )
+    if s:
+        themes = cells(row["themes"])
+        s["helped"] = needs_from_themes(themes, RETAIL_HELPED)
+        s["hurt"] = needs_from_themes(themes, RETAIL_HURT)
+    return s
+
+
 def retail(data: Path, stats: Counter) -> Rows:
     """Ulta/Walmart: no text, so needs come from the tagged themes."""
     with (data / "retail" / "reviews.csv").open(newline="") as f:
@@ -184,29 +213,7 @@ def retail(data: Path, stats: Counter) -> Rows:
             sentiment = sentiment_of(row["rating"])
             if row["repeated_text"] == "True" or sentiment is None:
                 continue
-            family = RETAIL_FAMILY.get(row["retailer_hair_type"])
-            family = family or row["texture_best"].capitalize()
-            s = signal(
-                product_key("retail", row["product_id"]),
-                sentiment,
-                [c for c in row["curl_patterns"].split("|") if c],
-                [family],
-                [p for p in row["porosity"].split("|") if p],
-                [t for t in row["thickness"].split("|") if t],
-                "",
-                row["review_url"] or None,
-            )
-            if s:
-                themes = [t for t in row["themes"].split("|") if t]
-                s["helped"] = list(
-                    dict.fromkeys(
-                        RETAIL_HELPED[t] for t in themes if t in RETAIL_HELPED
-                    )
-                )
-                s["hurt"] = list(
-                    dict.fromkeys(RETAIL_HURT[t] for t in themes if t in RETAIL_HURT)
-                )
-            yield "retail", s
+            yield "retail", retail_signal(row, sentiment)
 
 
 def main() -> None:

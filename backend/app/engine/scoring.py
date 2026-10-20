@@ -55,6 +55,19 @@ class Contribution:
     points: float
 
 
+def _effects(
+    group: IngredientGroup, conditions: Iterable[Condition]
+) -> list[tuple[dict[str, float], Condition | None]]:
+    """The group's own effects, then whatever today's weather adds or takes away."""
+    effects = [(GROUP_EFFECTS[group], None)]
+    effects += [
+        (CONDITION_GROUP_EFFECTS[c][group], c)
+        for c in conditions
+        if group in CONDITION_GROUP_EFFECTS.get(c, {})
+    ]
+    return effects
+
+
 def score(
     lines: list[Line], needs: Needs, conditions: Iterable[Condition] = ()
 ) -> tuple[float, list[Contribution]]:
@@ -63,13 +76,7 @@ def score(
     for line in lines:
         if line.group is None:
             continue
-        effects = [(GROUP_EFFECTS[line.group], None)]
-        effects += [
-            (CONDITION_GROUP_EFFECTS[c][line.group], c)
-            for c in conditions
-            if line.group in CONDITION_GROUP_EFFECTS.get(c, {})
-        ]
-        for vector, condition in effects:
+        for vector, condition in _effects(line.group, conditions):
             for need, effect in vector.items():
                 weight = needs.weights.get(need)
                 if weight:
@@ -141,23 +148,30 @@ def _verb(phrase: str, plural: bool) -> str:
     return " and ".join(parts)
 
 
-def explain(
-    contributions: list[Contribution], needs: Needs
-) -> tuple[list[str], list[str]]:
-    """Up to 3 reasons ("Glycerin adds moisture for your 4C hair") and 2 warnings.
-
-    Each ingredient is judged by its net effect on a need, weather included, so glycerin
-    on a dry day shows up as a warning and never also as a reason.
-    """
+def _net(
+    contributions: list[Contribution],
+) -> tuple[dict[tuple[str, str], float], dict[tuple[str, str], Condition]]:
+    """Net points per (ingredient, need), and the weather condition that pushed each
+    one down the most."""
     net: dict[tuple[str, str], float] = {}
-    # The weather condition that pushed an ingredient's effect down the most.
     blame: dict[tuple[str, str], tuple[float, Condition]] = {}
     for c in contributions:
         key = (c.ingredient, c.need)
         net[key] = net.get(key, 0) + c.points
         if c.condition and c.points < blame.get(key, (0, None))[0]:
             blame[key] = (c.points, c.condition)
+    return net, {key: condition for key, (_, condition) in blame.items()}
 
+
+def _split(
+    contributions: list[Contribution], needs: Needs
+) -> tuple[
+    dict[str, list[tuple[str, float]]],
+    dict[tuple[str, Condition | None], list[tuple[str, float]]],
+]:
+    """Groups ingredients that help a wanted need, and those that hurt one (by need and
+    the weather to blame)."""
+    net, blame = _net(contributions)
     helps: dict[str, list[tuple[str, float]]] = {}
     hurts: dict[tuple[str, Condition | None], list[tuple[str, float]]] = {}
     for (ingredient, need), points in net.items():
@@ -166,9 +180,12 @@ def explain(
         if points > 0:
             helps.setdefault(need, []).append((ingredient, points))
         elif points < 0:
-            condition = blame.get((ingredient, need), (0, None))[1]
+            condition = blame.get((ingredient, need))
             hurts.setdefault((need, condition), []).append((ingredient, points))
+    return helps, hurts
 
+
+def _reasons(helps: dict[str, list[tuple[str, float]]], needs: Needs) -> list[str]:
     # Same ingredients helping two needs read as one line: "add moisture and stay light".
     lines: dict[tuple[tuple[str, ...], str | None], list[str]] = {}
     for need, items in sorted(helps.items(), key=lambda kv: -sum(p for _, p in kv[1])):
@@ -178,11 +195,15 @@ def explain(
         key = (names, needs.why(need))
         if key in lines or len(lines) < 3:
             lines.setdefault(key, []).append(_verb(HELPS[need], len(names) > 1))
-    reasons = [
+    return [
         f"{_join(list(names))} {' and '.join(phrases)}" + (f" {why}" if why else "")
         for (names, why), phrases in lines.items()
     ]
 
+
+def _warnings(
+    hurts: dict[tuple[str, Condition | None], list[tuple[str, float]]],
+) -> list[str]:
     warnings, warned = [], set()
     for (need, condition), items in sorted(
         hurts.items(), key=lambda kv: sum(p for _, p in kv[1])
@@ -198,4 +219,16 @@ def explain(
         warnings.append(
             text + (f" in today's {CONDITION_LABELS[condition]}" if condition else "")
         )
-    return reasons, warnings
+    return warnings
+
+
+def explain(
+    contributions: list[Contribution], needs: Needs
+) -> tuple[list[str], list[str]]:
+    """Up to 3 reasons ("Glycerin adds moisture for your 4C hair") and 2 warnings.
+
+    Each ingredient is judged by its net effect on a need, weather included, so glycerin
+    on a dry day shows up as a warning and never also as a reason.
+    """
+    helps, hurts = _split(contributions, needs)
+    return _reasons(helps, needs), _warnings(hurts)

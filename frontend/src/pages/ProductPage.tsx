@@ -6,7 +6,7 @@ import { ProductImage } from '../components/ProductImage'
 import { SaveButtons } from '../components/SaveButtons'
 import { SimilarProducts } from '../components/SimilarProducts'
 import { WhereToBuy } from '../components/WhereToBuy'
-import { useProfile } from '../profile'
+import { useProfile } from '../profileContext'
 import { useAsync } from '../useAsync'
 import { ApiDown } from './FinderPage'
 

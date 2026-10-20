@@ -46,6 +46,32 @@ class Needs:
         )
 
 
+# Single-answer profile fields: the needs each answer adds, and the phrase for it.
+_PROFILE_NEEDS = [
+    (POROSITY_NEEDS, "for your {}-porosity hair"),
+    (THICKNESS_NEEDS, "for your {} strands"),
+    (DENSITY_NEEDS, "for your {}-density hair"),
+    (SCALP_NEEDS, "for your {} scalp"),
+]
+
+
+def _add_hair_types(n: Needs, hair_types: list[str]) -> None:
+    known = [t for t in hair_types if t in HAIR_TYPE_NEEDS]
+    # Several types (people often have more than one pattern) share one vote.
+    hair_phrase = f"for your {'/'.join(known)} hair"
+    n.quiet.add(hair_phrase)
+    for t in known:
+        n.add(HAIR_TYPE_NEEDS[t], hair_phrase, 1 / len(known))
+
+
+def _add_conditions(n: Needs, conditions: Iterable[Condition]) -> None:
+    for c in conditions:
+        phrase = f"for today's {CONDITION_LABELS[c]}"
+        n.add(CONDITION_NEEDS[c], phrase)
+        for need in CONDITION_NEEDS[c]:
+            n.weather_because.setdefault(need, phrase)
+
+
 def needs_for(
     hair_types: list[str],
     *,
@@ -58,28 +84,15 @@ def needs_for(
     conditions: Iterable[Condition] = (),
 ) -> Needs:
     n = Needs()
-    known = [t for t in hair_types if t in HAIR_TYPE_NEEDS]
-    # Several types (people often have more than one pattern) share one vote.
-    hair_phrase = f"for your {'/'.join(known)} hair"
-    n.quiet.add(hair_phrase)
-    for t in known:
-        n.add(HAIR_TYPE_NEEDS[t], hair_phrase, 1 / len(known))
-    if porosity:
-        n.add(POROSITY_NEEDS[porosity], f"for your {porosity}-porosity hair")
-    if thickness:
-        n.add(THICKNESS_NEEDS[thickness], f"for your {thickness} strands")
-    if density:
-        n.add(DENSITY_NEEDS[density], f"for your {density}-density hair")
-    if scalp:
-        n.add(SCALP_NEEDS[scalp], f"for your {scalp} scalp")
+    _add_hair_types(n, hair_types)
+    answers = (porosity, thickness, density, scalp)
+    for (table, phrase), answer in zip(_PROFILE_NEEDS, answers, strict=True):
+        if answer:
+            n.add(table[answer], phrase.format(answer))
     if color_treated:
         n.add(COLOR_TREATED_NEEDS, "for your colored hair")
     n.quiet.add("for your search")
     for g in goals:
         n.add(GOAL_NEEDS[g], "for your search")
-    for c in conditions:
-        phrase = f"for today's {CONDITION_LABELS[c]}"
-        n.add(CONDITION_NEEDS[c], phrase)
-        for need in CONDITION_NEEDS[c]:
-            n.weather_because.setdefault(need, phrase)
+    _add_conditions(n, conditions)
     return n

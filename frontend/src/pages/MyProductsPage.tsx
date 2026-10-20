@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { api } from '../api'
 import { ProductImage } from '../components/ProductImage'
 import { formatList } from '../format'
-import { useProfile } from '../profile'
+import { useProfile } from '../profileContext'
 import type { ProductSummary } from '../types'
 import { useAsync } from '../useAsync'
 

@@ -9,12 +9,13 @@ knowledge lives in app/engine/rules.py and app/engine/ingredient_groups.py.
 """
 
 import re
+from dataclasses import dataclass
 from functools import lru_cache
 from typing import Protocol
 
 from app.catalog import Catalog, get_catalog
 from app.engine import query
-from app.engine.needs import needs_for
+from app.engine.needs import Needs, needs_for
 from app.engine.reviews import ReviewIndex, load_reviews
 from app.engine.scoring import Delivery, analyze, delivery, explain, quick_score, score
 from app.engine.vocab import Condition
@@ -102,6 +103,20 @@ def conditions_from(environment: Environment | None) -> list[Condition]:
     if environment.temperature_c < COLD_BELOW_C:
         out.append("cold")
     return out
+
+
+@dataclass(frozen=True)
+class _Ask:
+    """What one request asks for, worked out once before ranking every product."""
+
+    request: RecommendationRequest
+    wanted_types: set[str]
+    owned_ids: set[str]
+    liked: list[Product]
+    wanted_kinds: set[str]
+    words: list[str]  # search words left after product kinds are taken out
+    conditions: list[Condition]
+    needs: Needs
 
 
 class GraphRecommender:
@@ -203,16 +218,9 @@ class GraphRecommender:
             ]
         ).lower()
 
-    def recommend(
+    def _ask(
         self, request: RecommendationRequest, environment: Environment | None
-    ) -> list[Recommendation]:
-        wanted_types = set(request.hair_types)
-        owned_ids = set(request.liked_product_ids) | set(request.current_product_ids)
-        liked = [p for pid in request.liked_product_ids if (p := self.catalog.get(pid))]
-        wanted_kinds = query.kinds_in(request.query)
-        # Words that picked a product kind already did their job.
-        words = _tokens(query.without_kinds(request.query))
-
+    ) -> _Ask:
         # Weather where they are, plus any climate they mention ("beach trip").
         conditions = conditions_from(environment)
         conditions += [
@@ -228,66 +236,108 @@ class GraphRecommender:
             goals=query.goals_in(request.query),
             conditions=conditions,
         )
+        return _Ask(
+            request=request,
+            wanted_types=set(request.hair_types),
+            owned_ids=set(request.liked_product_ids) | set(request.current_product_ids),
+            liked=[
+                p for pid in request.liked_product_ids if (p := self.catalog.get(pid))
+            ],
+            wanted_kinds=query.kinds_in(request.query),
+            # Words that picked a product kind already did their job.
+            words=_tokens(query.without_kinds(request.query)),
+            conditions=conditions,
+            needs=needs,
+        )
 
+    def _eligible(self, product: Product, ask: _Ask) -> bool:
+        # People already have these; suggesting them back is noise.
+        if product.id in ask.owned_ids:
+            return False
+        if ask.wanted_kinds and self.kinds[product.id] not in ask.wanted_kinds:
+            return False
+        # A product made for other hair types is out; one that doesn't say is judged on ingredients.
+        made_for = ask.wanted_types & set(product.hair_types)
+        return not (ask.wanted_types and product.hair_types and not made_for)
+
+    # Each signal below returns (points to add, short reason or None).
+
+    def _made_for_signal(self, product: Product, ask: _Ask) -> tuple[float, str | None]:
+        made_for = ask.wanted_types & set(product.hair_types)
+        if not made_for:
+            return 0.0, None
+        points = MADE_FOR_WEIGHT * len(made_for) / len(ask.wanted_types)
+        return points, f"Made for {', '.join(sorted(made_for))}"
+
+    def _review_signal(self, product: Product, ask: _Ask) -> tuple[float, str | None]:
+        evidence = self.reviews.evidence(
+            product.id, ask.request.hair_types, ask.request.porosity
+        )
+        if not evidence:
+            return 0.0, None
+        return REVIEW_WEIGHT * evidence.score, evidence.summary
+
+    def _search_signal(self, product: Product, ask: _Ask) -> tuple[float, str | None]:
+        if not ask.words:
+            return 0.0, None
+        text = self._searchable_text(product)
+        hits = [w for w in ask.words if _stem(w) in text]
+        if not hits:
+            return 0.0, None
+        points = SEARCH_HIT_WEIGHT * len(hits) / len(ask.words)
+        return points, "Matches " + ", ".join(f"“{w}”" for w in hits)
+
+    def _liked_signal(self, product: Product, ask: _Ask) -> tuple[float, str | None]:
+        if not ask.liked:
+            return 0.0, None
+        best = max(ask.liked, key=lambda o: self._formula_similarity(product, o))
+        sim = self._formula_similarity(product, best)
+        if sim <= SIMILAR_TO_LIKED_MIN:
+            return 0.0, None
+        return SIMILAR_TO_LIKED_WEIGHT * sim, f"Similar formula to {best.name}"
+
+    def _quick_rank(self, product: Product, ask: _Ask) -> tuple[float, list[str]]:
+        total = quick_score(self.deliveries[product.id], ask.needs, ask.conditions)
+        # Short, direct signals first; ingredient reasons fill the remaining slots.
+        signals = []
+        for points, signal in (
+            self._made_for_signal(product, ask),
+            self._review_signal(product, ask),
+            self._search_signal(product, ask),
+            self._liked_signal(product, ask),
+        ):
+            total += points
+            if signal:
+                signals.append(signal)
+        return total, signals
+
+    def _explained(
+        self, total: float, product: Product, signals: list[str], ask: _Ask
+    ) -> Recommendation:
+        _, contributions = score(self.lines[product.id], ask.needs, ask.conditions)
+        ingredient_reasons, warnings = explain(contributions, ask.needs)
+        return Recommendation(
+            product=self.catalog.summary(product),
+            score=round(total, 3),
+            reasons=(signals + ingredient_reasons)[:MAX_REASONS],
+            warnings=warnings,
+        )
+
+    def recommend(
+        self, request: RecommendationRequest, environment: Environment | None
+    ) -> list[Recommendation]:
+        ask = self._ask(request, environment)
         # Score everything cheaply, then explain only what will be shown.
-        ranked: list[tuple[float, Product, list[str]]] = []
-        for product in self.catalog.products.values():
-            # People already have these; suggesting them back is noise.
-            if product.id in owned_ids:
-                continue
-            if wanted_kinds and self.kinds[product.id] not in wanted_kinds:
-                continue
-            made_for = wanted_types & set(product.hair_types)
-            # A product made for other hair types is out; one that doesn't say is judged on ingredients.
-            if wanted_types and product.hair_types and not made_for:
-                continue
-
-            total = quick_score(self.deliveries[product.id], needs, conditions)
-            # Short, direct signals first; ingredient reasons fill the remaining slots.
-            signals = []
-
-            if made_for:
-                total += MADE_FOR_WEIGHT * len(made_for) / len(wanted_types)
-                signals.append(f"Made for {', '.join(sorted(made_for))}")
-
-            evidence = self.reviews.evidence(
-                product.id, request.hair_types, request.porosity
-            )
-            if evidence:
-                total += REVIEW_WEIGHT * evidence.score
-                if evidence.summary:
-                    signals.append(evidence.summary)
-
-            if words:
-                text = self._searchable_text(product)
-                hits = [w for w in words if _stem(w) in text]
-                if hits:
-                    total += SEARCH_HIT_WEIGHT * len(hits) / len(words)
-                    signals.append("Matches " + ", ".join(f"“{w}”" for w in hits))
-
-            if liked:
-                best = max(liked, key=lambda o: self._formula_similarity(product, o))
-                sim = self._formula_similarity(product, best)
-                if sim > SIMILAR_TO_LIKED_MIN:
-                    total += SIMILAR_TO_LIKED_WEIGHT * sim
-                    signals.append(f"Similar formula to {best.name}")
-
-            ranked.append((total, product, signals))
-
+        ranked = [
+            (*self._quick_rank(product, ask), product)
+            for product in self.catalog.products.values()
+            if self._eligible(product, ask)
+        ]
         ranked.sort(key=lambda r: -r[0])
-        results = []
-        for total, product, signals in ranked[: request.limit]:
-            _, contributions = score(self.lines[product.id], needs, conditions)
-            ingredient_reasons, warnings = explain(contributions, needs)
-            results.append(
-                Recommendation(
-                    product=self.catalog.summary(product),
-                    score=round(total, 3),
-                    reasons=(signals + ingredient_reasons)[:MAX_REASONS],
-                    warnings=warnings,
-                )
-            )
-        return results
+        return [
+            self._explained(total, product, signals, ask)
+            for total, signals, product in ranked[: request.limit]
+        ]
 
 
 @lru_cache

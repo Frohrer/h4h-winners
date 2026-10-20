@@ -3,7 +3,7 @@ import { DataPage } from './pages/DataPage'
 import { FinderPage } from './pages/FinderPage'
 import { MyProductsPage } from './pages/MyProductsPage'
 import { ProductPage } from './pages/ProductPage'
-import { useProfile } from './profile'
+import { useProfile } from './profileContext'
 
 export function App() {
   const profile = useProfile()

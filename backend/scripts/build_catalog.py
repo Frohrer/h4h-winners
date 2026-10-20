@@ -15,6 +15,7 @@ import json
 import re
 import sys
 from collections import Counter
+from dataclasses import dataclass, field
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -423,50 +424,69 @@ def label_form(forms: Counter) -> str:
     return next((f for f in ranked if not f.isupper()), ranked[0])
 
 
+@dataclass
+class Build:
+    """The products kept so far, and why the others were dropped."""
+
+    products: dict[str, dict] = field(default_factory=dict)  # dedupe key → product
+    inci_forms: dict[str, Counter] = field(default_factory=dict)
+    survived: Counter = field(default_factory=Counter)
+    by_kind: Counter = field(default_factory=Counter)
+    dropped: Counter = field(default_factory=Counter)
+
+    def offer(self, r: dict, rank: int, source: str) -> None:
+        if not r.get("ingredients_raw") or not r.get("name"):
+            return
+        if EXCLUDE.search(f"{r['category']} {r['name']}"):
+            self.dropped[(source, "not a formula")] += 1
+            return
+        kind = product_kind(r["name"], r["category"] or "")
+        if kind == "other":
+            self.dropped[(source, "kind other")] += 1
+            return
+        inci = parse_inci(r["ingredients_raw"])
+        if len({ingredient_key(i) for i in inci}) < MIN_INGREDIENTS:
+            self.dropped[(source, "too few ingredients")] += 1
+            return
+        product = build_product(r, inci, kind)
+        key = dedupe_key(product["brand"], product["name"])
+        if not self._replaces(self.products.get(key), product, rank):
+            self.dropped[(source, "duplicate")] += 1
+            return
+        self._keep(key, {**product, "_rank": rank, "_source": source, "_kind": kind})
+        for name in inci:
+            self.inci_forms.setdefault(ingredient_key(name), Counter())[name] += 1
+
+    @staticmethod
+    def _replaces(held: dict | None, product: dict, rank: int) -> bool:
+        # Same source twice: keep the fuller record.
+        if held is None:
+            return True
+        same = held["_rank"] == rank
+        return same and len(product["formula"]) > len(held["formula"])
+
+    def _keep(self, key: str, product: dict) -> None:
+        held = self.products.get(key)
+        if held is not None:
+            self.survived[held["_source"]] -= 1
+            self.by_kind[(held["_source"], held["_kind"])] -= 1
+        self.products[key] = product
+        self.survived[product["_source"]] += 1
+        self.by_kind[(product["_source"], product["_kind"])] += 1
+
+
 def main() -> None:
     seed = json.loads(SEED_PATH.read_text())
-    products: dict[str, dict] = {}  # dedupe key → product
-    inci_forms: dict[str, Counter] = {}
-    survived: Counter = Counter()
-    by_kind: Counter = Counter()
-    dropped: Counter = Counter()
+    build = Build()
     for rank, source in enumerate(SOURCES):
         for r in read_source(source):
-            if not r.get("ingredients_raw") or not r.get("name"):
-                continue
-            text = f"{r['category']} {r['name']}"
-            if EXCLUDE.search(text):
-                dropped[(source, "not a formula")] += 1
-                continue
-            kind = product_kind(r["name"], r["category"] or "")
-            if kind == "other":
-                dropped[(source, "kind other")] += 1
-                continue
-            inci = parse_inci(r["ingredients_raw"])
-            if len({ingredient_key(i) for i in inci}) < MIN_INGREDIENTS:
-                dropped[(source, "too few ingredients")] += 1
-                continue
-            product = build_product(r, inci, kind)
-            key = dedupe_key(product["brand"], product["name"])
-            held = products.get(key)
-            if held is not None:
-                # Same source twice: keep the fuller record.
-                same = held["_rank"] == rank
-                fuller = len(product["formula"]) > len(held["formula"])
-                if not (same and fuller):
-                    dropped[(source, "duplicate")] += 1
-                    continue
-                survived[held["_source"]] -= 1
-                by_kind[(held["_source"], held["_kind"])] -= 1
-            for name in inci:
-                inci_forms.setdefault(ingredient_key(name), Counter())[name] += 1
-            products[key] = {**product, "_rank": rank, "_source": source, "_kind": kind}
-            survived[source] += 1
-            by_kind[(source, kind)] += 1
+            build.offer(r, rank, source)
+    products = build.products
 
     used = Counter(e["ingredient_id"] for p in products.values() for e in p["formula"])
     ingredients = [
-        ingredient_record(key, label_form(inci_forms[key])) for key in sorted(used)
+        ingredient_record(key, label_form(build.inci_forms[key]))
+        for key in sorted(used)
     ]
     out = {
         "hair_types": seed["hair_types"],
@@ -479,22 +499,34 @@ def main() -> None:
     CatalogFile.model_validate(out)
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(out, ensure_ascii=False))
-    report(products, ingredients, used, survived, by_kind, dropped)
+    report(products, ingredients, used, build.survived, build.by_kind, build.dropped)
 
 
 def report(products, ingredients, used, survived, by_kind, dropped) -> None:
     print(f"Wrote {OUT}: {len(products)} products, {len(ingredients)} ingredients")
     for source in SOURCES:
-        kinds = {k: n for (s, k), n in sorted(by_kind.items()) if s == source and n}
-        print(f"  {source}: {survived[source]} kept {kinds}")
-        lost = {why: n for (s, why), n in dropped.items() if s == source}
-        print(f"    dropped {lost}")
+        _report_source(source, survived, by_kind, dropped)
+    _report_products(products)
+    _report_ingredients(ingredients, used)
+
+
+def _report_source(source, survived, by_kind, dropped) -> None:
+    kinds = {k: n for (s, k), n in sorted(by_kind.items()) if s == source and n}
+    print(f"  {source}: {survived[source]} kept {kinds}")
+    lost = {why: n for (s, why), n in dropped.items() if s == source}
+    print(f"    dropped {lost}")
+
+
+def _report_products(products) -> None:
     print(
         "Per kind:", dict(Counter(p["_kind"] for p in products.values()).most_common())
     )
     with_types = sum(1 for p in products.values() if p["hair_types"])
     with_price = sum(1 for p in products.values() if p["listings"])
     print(f"With hair types: {with_types}; with a price: {with_price}")
+
+
+def _report_ingredients(ingredients, used) -> None:
     by_id = {i["id"]: i for i in ingredients}
     grouped = sum(n for k, n in used.items() if classify(by_id[k]["inci"]))
     other = sum(n for k, n in used.items() if by_id[k]["function"] == "Other")

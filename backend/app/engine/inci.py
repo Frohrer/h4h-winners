@@ -61,14 +61,16 @@ def _clean(token: str) -> str:
 MARKETING = re.compile(r"\b(our|all-new|formula|contains|made with)\b", re.IGNORECASE)
 
 
-def parse_inci(raw: str | None) -> list[str]:
-    if not raw:
-        return []
+def _normalize(raw: str) -> str:
     text = re.sub(r"\s+", " ", raw)
     text = re.sub(r"[•·|]", ",", text)
     text = re.sub(r"\s\(and\)\s", ", ", text, flags=re.IGNORECASE)
     # "1,2-Hexanediol" is one name; restored in _clean.
-    text = re.sub(r"(?<=\d),(?=\d)", "\0", text)
+    return re.sub(r"(?<=\d),(?=\d)", "\0", text)
+
+
+def _list_only(text: str) -> str:
+    """Cuts the legal tail and any labelled text around the list."""
     tail = _TAIL.search(text)
     if tail:
         text = text[: tail.start()]
@@ -77,25 +79,32 @@ def parse_inci(raw: str | None) -> list[str]:
     label = _LABEL.search(text)
     while label:
         if _looks_like_list(text[: label.start()]):
-            text = text[: label.start()]
-            break
+            return text[: label.start()]
         text = text[label.end() :]
         label = _LABEL.search(text)
+    return text
+
+
+def _tokens(text: str) -> list[str]:
     if len(re.findall(r"[,;]", text)) >= 3:
         tokens = _split_top_level(text)
     else:
         tokens = re.split(r"(?<=\))\s+", text)
     # Some labels end each name with a period instead of a comma.
-    tokens = [t for token in tokens for t in re.split(r"\.\s+(?=[A-Za-z])", token)]
-    out = []
-    for token in map(_clean, tokens):
-        # Long tokens and "Our all-new ... formula" are marketing, not names.
-        prose = (
-            len(token) > 100 or len(token.split()) > 10 or bool(MARKETING.search(token))
-        )
-        if re.search(r"[a-z]", token, re.IGNORECASE) and not prose:
-            out.append(token)
-    return out
+    return [t for token in tokens for t in re.split(r"\.\s+(?=[A-Za-z])", token)]
+
+
+def _is_name(token: str) -> bool:
+    # Long tokens and "Our all-new ... formula" are marketing, not names.
+    prose = len(token) > 100 or len(token.split()) > 10 or bool(MARKETING.search(token))
+    return bool(re.search(r"[a-z]", token, re.IGNORECASE)) and not prose
+
+
+def parse_inci(raw: str | None) -> list[str]:
+    if not raw:
+        return []
+    text = _list_only(_normalize(raw))
+    return [token for token in map(_clean, _tokens(text)) if _is_name(token)]
 
 
 _WATER = {"aqua", "water", "eau", "agua", "acqua", "purified", "deionized", "distilled"}
