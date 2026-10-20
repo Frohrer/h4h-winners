@@ -59,7 +59,7 @@ docker compose up
 
 ## Location and weather
 
-On first visit the UI asks `/api/location`, which looks up the visitor's IP with [ipwho.is](https://ipwho.is). In local dev that resolves to your own public IP. People can change the city (search runs through Open-Meteo geocoding) or turn location off; the choice is stored in their browser and never re-detected over. Weather comes from [Open-Meteo](https://open-meteo.com). Both are free and keyless, but ipwho.is receives every visitor's IP, so once deployed behind Cloudflare, Vercel, or CloudFront, switch `get_location_service()` to read the edge's geo headers instead.
+New visitors start in Philadelphia, Pennsylvania. People can change the city (search runs through Open-Meteo geocoding) or turn location off; the choice is stored in their browser. Weather comes from [Open-Meteo](https://open-meteo.com), which is free and keyless. The backend still has an IP lookup at `/api/location` (via [ipwho.is](https://ipwho.is)), but the UI no longer calls it.
 
 ## Profiles
 
