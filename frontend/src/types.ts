@@ -65,6 +65,7 @@ export interface Recommendation {
   product: ProductSummary
   score: number
   reasons: string[]
+  warnings: string[]
 }
 
 export interface Location {
@@ -93,6 +94,11 @@ export interface RecommendationRequest {
   liked_product_ids: string[]
   current_product_ids: string[]
   query: string
+  porosity?: 'low' | 'medium' | 'high'
+  thickness?: 'fine' | 'medium' | 'coarse'
+  density?: 'low' | 'medium' | 'high'
+  scalp?: 'normal' | 'oily' | 'dry' | 'flaky'
+  color_treated?: boolean
   location: Location | null
   limit?: number
 }

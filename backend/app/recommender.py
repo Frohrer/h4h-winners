@@ -1,12 +1,11 @@
-"""Recommender interface and a placeholder implementation.
+"""Recommender interface and the needs-graph implementation.
 
-The real recommendation system plugs in by implementing `Recommender` and
-returning it from get_recommender() (or via app.dependency_overrides in tests).
-Nothing else in the app needs to change: routes call only these two methods.
+Routes call only the two Recommender methods, so another implementation can be
+swapped in via get_recommender() (or app.dependency_overrides in tests).
 
-StubRecommender is deliberately naive (keyword prefix matching, weighted
-ingredient overlap) so the UI has believable results to render. Don't tune it;
-replace it.
+GraphRecommender walks: hair + search + weather → needs → ingredient groups →
+products, then adds what reviews from people with similar hair say. The hair
+knowledge lives in app/engine/rules.py and app/engine/ingredient_groups.py.
 """
 
 import re
@@ -14,8 +13,12 @@ from functools import lru_cache
 from typing import Protocol
 
 from app.catalog import Catalog, get_catalog
+from app.engine import query
+from app.engine.needs import needs_for
+from app.engine.reviews import ReviewIndex, load_reviews
+from app.engine.scoring import Line, analyze, explain, score
+from app.engine.vocab import Condition
 from app.models import (
-    DewPointBand,
     Environment,
     Product,
     Recommendation,
@@ -45,6 +48,20 @@ class Recommender(Protocol):
         ...
 
 
+# How much each signal moves the score. Ingredient scores of good matches usually sit
+# between 0.2 and 1, so these are sized to nudge, not to override, that ranking.
+REVIEW_WEIGHT = 0.5  # dozens of same-type reviews can beat a moderate ingredient gap
+MADE_FOR_WEIGHT = 0.2  # the brand says it's for your hair type
+SEARCH_HIT_WEIGHT = 1.0  # the words you typed appear on the product
+SIMILAR_TO_LIKED_WEIGHT = 1.0
+SIMILAR_TO_LIKED_MIN = 0.15
+MAX_REASONS = 4
+
+# Very humid starts here; the API's own bands only say "humid" above 16 °C.
+VERY_HUMID_FROM_C = 21.0
+STRONG_SUN_UV = 6.0
+COLD_BELOW_C = 5.0
+
 # fmt: off
 STOPWORDS = {
     "a", "an", "and", "for", "i", "in", "is", "it", "my", "of", "on", "or",
@@ -52,19 +69,13 @@ STOPWORDS = {
     # Substring matching makes these hit nearly every description.
     "less", "more", "very", "too", "really", "help", "helps", "make", "makes",
     "good", "best", "hair", "product", "products", "keep", "stay", "get",
+    "today", "tonight", "going",
 }
 # fmt: on
 
 
-CLIMATE_TAGS: dict[DewPointBand, tuple[set[str], str]] = {
-    "humid": ({"hold", "frizz", "definition"}, "Fights frizz in humid air"),
-    "dry": ({"moisture", "sealing", "dryness"}, "Extra moisture for dry air"),
-}
-
-
 def _stem(word: str) -> str:
-    # A 5-char prefix makes "moisturizing" hit "moisture" and "defining" hit
-    # "definition" without pulling in a stemming library for throwaway code.
+    # A 5-char prefix makes "moisturizing" hit "moisture" and "defining" hit "definition".
     return word[:5] if len(word) > 5 else word.rstrip("s")
 
 
@@ -76,9 +87,42 @@ def _tokens(text: str) -> list[str]:
     ]
 
 
-class StubRecommender:
-    def __init__(self, catalog: Catalog):
+def conditions_from(environment: Environment | None) -> list[Condition]:
+    if environment is None:
+        return []
+    out: list[Condition] = []
+    if environment.dew_point_band == "dry":
+        out.append("very_dry_air")
+    elif environment.dew_point_band == "humid":
+        out.append(
+            "very_humid" if environment.dew_point_c >= VERY_HUMID_FROM_C else "humid"
+        )
+    if (environment.uv_index or 0) >= STRONG_SUN_UV:
+        out.append("strong_sun")
+    if environment.temperature_c < COLD_BELOW_C:
+        out.append("cold")
+    return out
+
+
+class GraphRecommender:
+    def __init__(self, catalog: Catalog, reviews: ReviewIndex):
         self.catalog = catalog
+        self.reviews = reviews
+        self.lines: dict[str, list[Line]] = {
+            p.id: analyze(
+                (
+                    catalog.ingredients[e.ingredient_id].name,
+                    catalog.ingredients[e.ingredient_id].inci,
+                    e.concentration_pct,
+                )
+                for e in p.formula
+            )
+            for p in catalog.products.values()
+        }
+        self.kinds = {
+            p.id: query.kind_of(f"{p.category} {p.name}")
+            for p in catalog.products.values()
+        }
 
     # --- formula similarity ---------------------------------------------------
 
@@ -137,13 +181,9 @@ class StubRecommender:
             for sim, other in scored[:limit]
         ]
 
-    # --- personalized search ----------------------------------------------------
+    # --- personalized ranking -----------------------------------------------------
 
     def _searchable_text(self, product: Product) -> str:
-        ingredient_text = " ".join(
-            f"{self.catalog.ingredients[e.ingredient_id].name} {self.catalog.ingredients[e.ingredient_id].function}"
-            for e in product.formula
-        )
         return " ".join(
             [
                 product.name,
@@ -151,7 +191,6 @@ class StubRecommender:
                 product.category,
                 product.description,
                 " ".join(product.tags),
-                ingredient_text,
             ]
         ).lower()
 
@@ -160,52 +199,77 @@ class StubRecommender:
     ) -> list[Recommendation]:
         wanted_types = set(request.hair_types)
         owned_ids = set(request.liked_product_ids) | set(request.current_product_ids)
-        owned = [p for pid in owned_ids if (p := self.catalog.get(pid))]
-        query_words = _tokens(request.query)
-        climate = CLIMATE_TAGS.get(environment.dew_point_band) if environment else None
+        liked = [p for pid in request.liked_product_ids if (p := self.catalog.get(pid))]
+        wanted_kinds = query.kinds_in(request.query)
+        words = _tokens(request.query)
+
+        # Weather where they are, plus any climate they mention ("beach trip").
+        conditions = conditions_from(environment)
+        conditions += [
+            c for c in query.climates_in(request.query) if c not in conditions
+        ]
+        needs = needs_for(
+            request.hair_types,
+            porosity=request.porosity,
+            thickness=request.thickness,
+            density=request.density,
+            scalp=request.scalp,
+            color_treated=request.color_treated,
+            goals=query.goals_in(request.query),
+            conditions=conditions,
+        )
 
         results = []
         for product in self.catalog.products.values():
             # People already have these; suggesting them back is noise.
             if product.id in owned_ids:
                 continue
+            if wanted_kinds and self.kinds[product.id] not in wanted_kinds:
+                continue
+            made_for = wanted_types & set(product.hair_types)
+            # A product made for other hair types is out; one that doesn't say is judged on ingredients.
+            if wanted_types and product.hair_types and not made_for:
+                continue
 
+            total, contributions = score(self.lines[product.id], needs, conditions)
+            ingredient_reasons, warnings = explain(contributions, needs)
+            # Short, direct signals first; ingredient reasons fill the remaining slots.
             reasons = []
-            score = 0.0
 
-            if wanted_types:
-                matched_types = wanted_types & set(product.hair_types)
-                if not matched_types:
-                    continue
-                score += 3 * len(matched_types) / len(wanted_types)
-                reasons.append(f"Made for {', '.join(sorted(matched_types))}")
+            if made_for:
+                total += MADE_FOR_WEIGHT * len(made_for) / len(wanted_types)
+                reasons.append(f"Made for {', '.join(sorted(made_for))}")
 
-            if query_words:
+            evidence = self.reviews.evidence(
+                product.id, request.hair_types, request.porosity
+            )
+            if evidence:
+                total += REVIEW_WEIGHT * evidence.score
+                if evidence.summary:
+                    reasons.append(evidence.summary)
+
+            if words:
                 text = self._searchable_text(product)
-                hits = [w for w in query_words if _stem(w) in text]
-                if not hits:
-                    continue
-                score += 4 * len(hits) / len(query_words)
-                reasons.append("Matches " + ", ".join(f"“{w}”" for w in hits))
+                hits = [w for w in words if _stem(w) in text]
+                if hits:
+                    total += SEARCH_HIT_WEIGHT * len(hits) / len(words)
+                    reasons.append("Matches " + ", ".join(f"“{w}”" for w in hits))
 
-            if owned:
-                best = max(owned, key=lambda o: self._formula_similarity(product, o))
-                best_sim = self._formula_similarity(product, best)
-                if best_sim > 0.15:
-                    score += 2 * best_sim
+            if liked:
+                best = max(liked, key=lambda o: self._formula_similarity(product, o))
+                sim = self._formula_similarity(product, best)
+                if sim > SIMILAR_TO_LIKED_MIN:
+                    total += SIMILAR_TO_LIKED_WEIGHT * sim
                     reasons.append(f"Similar formula to {best.name}")
 
-            # A nudge, not a filter: weather changes daily and shouldn't hide
-            # products that otherwise fit.
-            if climate and climate[0] & set(product.tags):
-                score += 1
-                reasons.append(climate[1])
+            reasons += ingredient_reasons
 
             results.append(
                 Recommendation(
                     product=self.catalog.summary(product),
-                    score=round(score, 3),
-                    reasons=reasons,
+                    score=round(total, 3),
+                    reasons=reasons[:MAX_REASONS],
+                    warnings=warnings,
                 )
             )
 
@@ -215,4 +279,4 @@ class StubRecommender:
 
 @lru_cache
 def get_recommender() -> Recommender:
-    return StubRecommender(get_catalog())
+    return GraphRecommender(get_catalog(), load_reviews())

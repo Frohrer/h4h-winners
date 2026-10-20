@@ -5,6 +5,7 @@ export default defineConfig({
   plugins: [react()],
   server: {
     // Same-origin /api in dev means no CORS setup on the FastAPI side.
-    proxy: { '/api': 'http://127.0.0.1:8000' },
+    // API_URL points at the backend container under docker compose.
+    proxy: { '/api': process.env.API_URL ?? 'http://127.0.0.1:8000' },
   },
 })

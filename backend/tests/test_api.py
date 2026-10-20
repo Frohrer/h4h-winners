@@ -286,7 +286,14 @@ def test_humid_weather_nudges_frizz_fighters_up(no_network):
         for r in humid["results"]
         if r["product"]["id"] == "baobab-flaxseed-defining-gel"
     )
-    assert "Fights frizz in humid air" in gel["reasons"]
+    assert (
+        "Flaxseed extract and castor oil fight frizz for today's humid air"
+        in gel["reasons"]
+    )
+    assert (
+        "Aloe vera juice and glycerin can cause frizz in today's humid air"
+        in gel["warnings"]
+    )
     assert environment.calls == [(39.95, -75.16)]
 
 
@@ -298,7 +305,10 @@ def test_dry_weather_nudges_moisture_up(no_network):
         json={"hair_types": ["4C"], "location": PHILLY.model_dump()},
     ).json()
     assert body["environment"]["dew_point_band"] == "dry"
-    assert any("Extra moisture for dry air" in r["reasons"] for r in body["results"])
+    reasons = [reason for r in body["results"] for reason in r["reasons"]]
+    assert (
+        "Mango butter and shea butter lock moisture in for today's dry air" in reasons
+    )
 
 
 @pytest.mark.parametrize(

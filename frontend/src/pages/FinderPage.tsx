@@ -137,7 +137,12 @@ export function FinderPage() {
 
         <div className="grid">
           {results.map((r) => (
-            <ProductTile key={r.product.id} product={r.product} reasons={r.reasons} />
+            <ProductTile
+              key={r.product.id}
+              product={r.product}
+              reasons={r.reasons}
+              warnings={r.warnings}
+            />
           ))}
         </div>
       </section>

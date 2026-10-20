@@ -68,3 +68,6 @@ Thumbs.db
 # --- Claude Code --------------------------------------------------------------
 # Shared settings (.claude/settings.json) are committed; personal ones aren't.
 .claude/settings.local.json
+
+# --- Browser automation scratch ---
+.playwright-mcp/

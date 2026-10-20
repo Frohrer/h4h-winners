@@ -630,6 +630,15 @@ main {
   background: var(--leaf);
 }
 
+.reasons--warn {
+  margin-top: 6px;
+  color: var(--sun);
+}
+
+.reasons--warn li::before {
+  background: var(--sun);
+}
+
 .favorite-toggle {
   position: absolute;
   top: 10px;
