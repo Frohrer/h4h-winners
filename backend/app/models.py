@@ -35,10 +35,8 @@ class Ingredient(BaseModel):
 
 
 class FormulaEntry(BaseModel):
+    # Label order is the only amount information: brands don't publish percentages.
     ingredient_id: str
-    # Brands almost never publish concentrations; scraped values will be
-    # estimates from INCI order, and some will be missing entirely.
-    concentration_pct: float | None = None
 
 
 class Listing(BaseModel):
@@ -111,7 +109,6 @@ class ProductSummary(BaseModel):
 
 class FormulaLine(BaseModel):
     ingredient: Ingredient
-    concentration_pct: float | None
 
 
 class ProductDetail(ProductSummary):
@@ -123,14 +120,12 @@ class ProductDetail(ProductSummary):
 class SharedIngredient(BaseModel):
     ingredient_id: str
     name: str
-    this_pct: float | None
-    other_pct: float | None
 
 
 class SimilarProduct(BaseModel):
     product: ProductSummary
     similarity: float  # 0..1, shown to people as "% formula match"
-    shared: list[SharedIngredient]  # most-shared first
+    shared: list[SharedIngredient]  # in the target product's label order
 
 
 class Recommendation(BaseModel):

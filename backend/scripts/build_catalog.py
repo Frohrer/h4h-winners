@@ -402,7 +402,7 @@ def build_product(r: dict, inci: list[str], kind: str) -> dict:
         key = ingredient_key(name_)
         if key and key not in seen:
             seen.add(key)
-            formula.append({"ingredient_id": key, "concentration_pct": None})
+            formula.append({"ingredient_id": key})
     return {
         "id": pid,
         "name": name,

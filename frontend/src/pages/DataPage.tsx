@@ -80,9 +80,9 @@ const SAMPLE = `{
   "category": "Curl cream",
   "hair_types": ["3C", "4A", "4B", "4C"],
   "formula": [
-    { "ingredient": "Water", "concentration_pct": 56 },
-    { "ingredient": "Shea butter", "concentration_pct": 12 },
-    { "ingredient": "Aloe vera juice", "concentration_pct": 8 },
+    { "ingredient": "Water" },
+    { "ingredient": "Shea butter" },
+    { "ingredient": "Aloe vera juice" },
     …
   ],
   "listings": [
@@ -153,12 +153,6 @@ export function DataPage() {
             ))}
           </tbody>
         </table>
-
-        <h3>What we estimate</h3>
-        <p className="data__body">
-          Brands rarely publish exact percentages. Labels list ingredients from most to least, so we estimate each
-          concentration from its position and mark it as an estimate wherever a number appears.
-        </p>
       </section>
 
       <section className="data__section data__open" aria-labelledby="open-heading">
@@ -166,7 +160,7 @@ export function DataPage() {
           <h2 id="open-heading">The full dataset will be free</h2>
           <p className="data__body">
             When the collection is complete, we’ll publish all of it for anyone to download: products, full ingredient
-            lists, estimated concentrations, prices, reviews, and ingredient explanations. It’s for researchers, brands,
+            lists, prices, reviews, and ingredient explanations. It’s for researchers, brands,
             and anyone building something for people with textured hair.
           </p>
           <dl className="release">

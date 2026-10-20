@@ -67,14 +67,9 @@ class Catalog:
 
     def detail(self, product: Product) -> ProductDetail:
         lines = [
-            FormulaLine(
-                ingredient=self.ingredients[entry.ingredient_id],
-                concentration_pct=entry.concentration_pct,
-            )
+            FormulaLine(ingredient=self.ingredients[entry.ingredient_id])
             for entry in product.formula
         ]
-        # Labels list ingredients in descending concentration; unknowns sort last.
-        lines.sort(key=lambda line: -(line.concentration_pct or -1))
         return ProductDetail(
             **self.summary(product).model_dump(),
             description=product.description,

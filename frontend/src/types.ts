@@ -39,7 +39,6 @@ export interface ProductSummary {
 
 export interface FormulaLine {
   ingredient: Ingredient
-  concentration_pct: number | null
 }
 
 export interface ProductDetail extends ProductSummary {
@@ -51,8 +50,6 @@ export interface ProductDetail extends ProductSummary {
 export interface SharedIngredient {
   ingredient_id: string
   name: string
-  this_pct: number | null
-  other_pct: number | null
 }
 
 export interface SimilarProduct {

@@ -34,7 +34,6 @@ def lines_of(product_id: str):
         (
             catalog.ingredients[e.ingredient_id].name,
             catalog.ingredients[e.ingredient_id].inci,
-            e.concentration_pct,
         )
         for e in p.formula
     )
@@ -86,20 +85,12 @@ def test_every_seed_ingredient_that_does_something_has_a_group():
     }
 
 
-def test_analyze_uses_concentrations_when_every_line_has_one():
-    lines = analyze([("Water", "Aqua", 80), ("Glycerin", "Glycerin", 20)])
-    assert [(line.group, line.weight) for line in lines] == [
-        (None, 0.8),
-        ("humectant", 0.2),
-    ]
-
-
-def test_analyze_falls_back_to_label_order():
+def test_analyze_weights_by_label_order():
     lines = analyze(
         [
-            ("Water", "Aqua", None),
-            ("Glycerin", "Glycerin", 5),
-            ("Shea", "Shea Butter", None),
+            ("Water", "Aqua"),
+            ("Glycerin", "Glycerin"),
+            ("Shea", "Shea Butter"),
         ]
     )
     # Weights 1, 0.75, 0.6 by position, normalized.
@@ -146,7 +137,7 @@ def test_conditions_from_environment(environment, conditions):
 
 
 def test_glycerin_is_a_plus_on_a_mild_day_and_a_warning_on_a_dry_one():
-    lines = analyze([("Water", "Aqua", 80), ("Glycerin", "Glycerin", 20)])
+    lines = analyze([("Water", "Aqua"), ("Glycerin", "Glycerin")])
 
     mild = needs_for(["4C"])
     assert explain(score(lines, mild)[1], mild) == (
@@ -321,7 +312,7 @@ def test_quick_score_matches_the_full_score_for_every_seed_product(
 
 
 def test_same_ingredients_helping_two_needs_share_one_line():
-    lines = analyze([("Water", "Aqua", 80), ("Glycerin", "Glycerin", 20)])
+    lines = analyze([("Water", "Aqua"), ("Glycerin", "Glycerin")])
     n = needs_for(["3B"], porosity="low")
     reasons, _ = explain(score(lines, n)[1], n)
     assert reasons == [
@@ -371,13 +362,13 @@ def test_a_few_same_type_reviews_defer_to_the_family_in_the_summary():
 def test_plural_verbs_and_one_warning_per_ingredient():
     lines = analyze(
         [
-            ("Water", "Aqua", 60),
-            ("Shea butter", "Butyrospermum Parkii Butter", 20),
-            ("PVP", "PVP", 10),
-            ("Polyquaternium-11", "Polyquaternium-11", 10),
+            ("Water", "Aqua"),
+            ("Shea butter", "Butyrospermum Parkii Butter"),
+            ("PVP", "PVP"),
+            ("Polyquaternium-11", "Polyquaternium-11"),
         ]
     )
     n = needs_for(["1A"], thickness="fine", goals=["define_curls"])
     reasons, warnings = explain(score(lines, n)[1], n)
-    assert "PVP and polyquaternium-11 define and hold" in reasons
+    assert "PVP and polyquaternium-11 define and hold and fight frizz" in reasons
     assert warnings == ["Shea butter can weigh hair down"]

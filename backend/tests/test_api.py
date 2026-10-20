@@ -100,12 +100,6 @@ def test_every_product_has_a_listing():
         assert product.listings, product.id
 
 
-def test_formula_concentrations_do_not_exceed_100():
-    for product in catalog.products.values():
-        total = sum(e.concentration_pct or 0 for e in product.formula)
-        assert total <= 100.0 + 1e-9, (product.id, total)
-
-
 # --- routes --------------------------------------------------------------------
 
 
@@ -127,11 +121,12 @@ def test_products_by_ids_preserves_order_and_skips_unknown():
     assert got == ["halo-jojoba-shine-oil", "coilwell-aloe-slip-leave-in"]
 
 
-def test_product_detail_orders_formula_by_concentration():
-    body = client.get("/api/products/coilwell-whipped-shea-curl-cream").json()
-    pcts = [line["concentration_pct"] for line in body["formula"]]
-    assert pcts == sorted(pcts, reverse=True)
-    assert body["formula"][0]["ingredient"]["name"] == "Water"
+def test_product_detail_keeps_label_order():
+    pid = "coilwell-whipped-shea-curl-cream"
+    body = client.get(f"/api/products/{pid}").json()
+    got = [line["ingredient"]["id"] for line in body["formula"]]
+    assert got == [e.ingredient_id for e in catalog.get(pid).formula]
+    assert got[:3] == ["water", "shea", "aloe"]
     assert body["price_from"] == min(l["price_usd"] for l in body["listings"])
 
 
@@ -152,6 +147,13 @@ def test_similar_products_rank_by_formula_and_report_shared_ingredients():
     assert all(r["product"]["price_from"] is not None for r in body)
     # Water is a base ingredient; it would otherwise dominate every comparison.
     assert all(s["ingredient_id"] != "water" for r in body for s in r["shared"])
+    # Shared ingredients follow this product's label.
+    label = [
+        e.ingredient_id for e in catalog.get("coilwell-whipped-shea-curl-cream").formula
+    ]
+    for r in body:
+        ids = [s["ingredient_id"] for s in r["shared"]]
+        assert ids == [i for i in label if i in ids]
 
 
 def test_recommendations_only_return_matching_hair_types():
