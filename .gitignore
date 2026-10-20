@@ -71,3 +71,8 @@ Thumbs.db
 
 # --- Browser automation scratch ---
 .playwright-mcp/
+
+# --- Scraped data -----------------------------------------------------------------
+# Third-party reviews and product data: never commit (this repo is public).
+# Also holds data/generated/, the catalog and review signals built from it.
+/data/
