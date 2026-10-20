@@ -307,7 +307,8 @@ def test_dry_weather_nudges_moisture_up(no_network):
     assert body["environment"]["dew_point_band"] == "dry"
     reasons = [reason for r in body["results"] for reason in r["reasons"]]
     assert (
-        "Mango butter and shea butter lock moisture in for today's dry air" in reasons
+        "Mango butter and shea butter lock moisture in and add moisture for today's dry air"
+        in reasons
     )
 
 

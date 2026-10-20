@@ -265,3 +265,12 @@ def test_quick_score_matches_the_full_score_for_every_seed_product(
         assert quick_score(delivery(lines), n, conditions) == pytest.approx(
             score(lines, n, conditions)[0]
         )
+
+
+def test_same_ingredients_helping_two_needs_share_one_line():
+    lines = analyze([("Water", "Aqua", 80), ("Glycerin", "Glycerin", 20)])
+    n = needs_for(["3B"], porosity="low")
+    reasons, _ = explain(score(lines, n)[1], n)
+    assert reasons == [
+        "Glycerin adds moisture and stays light for your low-porosity hair"
+    ]

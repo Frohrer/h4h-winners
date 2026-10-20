@@ -166,16 +166,19 @@ def explain(
             condition = blame.get((ingredient, need), (0, None))[1]
             hurts.setdefault((need, condition), []).append((ingredient, points))
 
-    reasons = []
+    # Same ingredients helping two needs read as one line: "add moisture and stay light".
+    lines: dict[tuple[tuple[str, ...], str | None], list[str]] = {}
     for need, items in sorted(helps.items(), key=lambda kv: -sum(p for _, p in kv[1])):
-        if sum(p for _, p in items) < REASON_MIN or len(reasons) == 3:
+        if sum(p for _, p in items) < REASON_MIN:
             continue
-        names = [n for n, _ in sorted(items, key=lambda x: -x[1])][:2]
-        why = needs.why(need)
-        reasons.append(
-            f"{_join(names)} {_verb(HELPS[need], len(names) > 1)}"
-            + (f" {why}" if why else "")
-        )
+        names = tuple(n for n, _ in sorted(items, key=lambda x: -x[1])[:2])
+        key = (names, needs.why(need))
+        if key in lines or len(lines) < 3:
+            lines.setdefault(key, []).append(_verb(HELPS[need], len(names) > 1))
+    reasons = [
+        f"{_join(list(names))} {' and '.join(phrases)}" + (f" {why}" if why else "")
+        for (names, why), phrases in lines.items()
+    ]
 
     warnings = []
     for (need, condition), items in sorted(
