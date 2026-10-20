@@ -1,43 +1,11 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { api } from './api'
-import type { Location, Porosity, Thickness } from './types'
+import { ProfileContext, type ListKey, type LocationPref, type Profile, type ProfileApi, type TraitKey } from './profileContext'
 
 // The profile lives in localStorage until there are accounts. Every
 // recommendation request sends it in full, so the recommender never depends
 // on server-side session state and moving this to a user table later won't
 // change the API contract.
-
-/**
- * 'detect' = not decided yet; look it up from the connection once.
- * 'set'    = detected or chosen; never overwritten by detection again.
- * 'off'    = the person removed it; respect that until they turn it back on.
- */
-export type LocationPref = { mode: 'detect' } | { mode: 'set'; value: Location } | { mode: 'off' }
-
-export interface Profile {
-  hairTypes: string[]
-  porosity: Porosity | null
-  thickness: Thickness | null
-  favorites: string[]
-  using: string[]
-  location: LocationPref
-}
-
-type ListKey = 'favorites' | 'using'
-type TraitKey = 'porosity' | 'thickness'
-
-interface ProfileApi extends Profile {
-  /** The location to send with searches, or null if unknown or turned off. */
-  activeLocation: Location | null
-  detecting: boolean
-  toggleHairType: (code: string) => void
-  /** Picking the current value again clears it; both are optional. */
-  toggleTrait: <K extends TraitKey>(key: K, value: NonNullable<Profile[K]>) => void
-  setLocation: (pref: LocationPref) => void
-  toggle: (list: ListKey, productId: string) => void
-  has: (list: ListKey, productId: string) => boolean
-  remove: (productId: string) => void
-}
 
 const STORAGE_KEY = 'strand.profile.v1'
 const EMPTY: Profile = {
@@ -57,8 +25,6 @@ function load(): Profile {
     return EMPTY
   }
 }
-
-const ProfileContext = createContext<ProfileApi | null>(null)
 
 export function ProfileProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile>(load)
@@ -143,10 +109,4 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   )
 
   return <ProfileContext.Provider value={value}>{children}</ProfileContext.Provider>
-}
-
-export function useProfile(): ProfileApi {
-  const ctx = useContext(ProfileContext)
-  if (!ctx) throw new Error('useProfile must be used inside <ProfileProvider>')
-  return ctx
 }

@@ -1,4 +1,4 @@
-import { useProfile } from '../profile'
+import { useProfile } from '../profileContext'
 
 export function HeartIcon({ filled }: { filled: boolean }) {
   return (

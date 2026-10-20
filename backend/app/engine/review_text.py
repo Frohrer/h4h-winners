@@ -99,29 +99,46 @@ def sentences(text: str) -> list[str]:
     return [s.strip() for s in SENTENCE.split(text) if s.strip()]
 
 
+def _record(out: TextSignals, need: Need, effect: str | None) -> None:
+    if effect is None:
+        return
+    target = out.helped if effect == "helped" else out.hurt
+    if need not in target:
+        target.append(need)
+
+
+def _read_sentence(s: str, sentiment: float, out: TextSignals) -> bool:
+    """Adds one lowercased sentence's effects to `out`; True when any rule matched."""
+    hit = False
+    for rule in RULES:
+        if rule.requires and not re.search(rule.requires, s):
+            continue
+        for m in re.finditer(rule.pattern, s):
+            hit = True
+            negated = _negated(s, m.start(), m.end())
+            _record(out, rule.need, _effect(rule, negated, sentiment))
+    return hit
+
+
+def _climate(text: str) -> Condition | None:
+    lowered = text.lower()
+    return next(
+        (c for c, pattern in CLIMATE_WORDS if re.search(pattern, lowered)), None
+    )
+
+
 def read_review(text: str, sentiment: float) -> TextSignals:
     out = TextSignals()
     first_hit = first_hair = None
     for sentence in sentences(text):
         s = sentence.lower()
-        hit = False
-        for rule in RULES:
-            if rule.requires and not re.search(rule.requires, s):
-                continue
-            for m in re.finditer(rule.pattern, s):
-                hit = True
-                effect = _effect(rule, _negated(s, m.start(), m.end()), sentiment)
-                target = out.helped if effect == "helped" else out.hurt
-                if effect and rule.need not in target:
-                    target.append(rule.need)
-        if len(sentence) <= QUOTE_MAX:
-            if hit and first_hit is None:
-                first_hit = sentence
-            if first_hair is None and HAIR_WORD.search(s):
-                first_hair = sentence
+        hit = _read_sentence(s, sentiment, out)
+        if len(sentence) > QUOTE_MAX:
+            continue
+        if hit and first_hit is None:
+            first_hit = sentence
+        if first_hair is None and HAIR_WORD.search(s):
+            first_hair = sentence
     out.quote = first_hit or first_hair
-    lowered = text.lower()
-    out.climate = next(
-        (c for c, pattern in CLIMATE_WORDS if re.search(pattern, lowered)), None
-    )
+    out.climate = _climate(text)
     return out

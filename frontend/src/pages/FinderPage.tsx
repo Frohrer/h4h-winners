@@ -7,9 +7,9 @@ import { LocationField } from '../components/LocationField'
 import { ProductTile } from '../components/ProductTile'
 import { TraitPicker } from '../components/TraitPicker'
 import { formatList } from '../format'
-import { useProfile } from '../profile'
-import type { Porosity, Thickness } from '../types'
-import { useAsync } from '../useAsync'
+import { useProfile } from '../profileContext'
+import type { Location, Porosity, RecommendationResponse, Thickness } from '../types'
+import { useAsync, type AsyncState } from '../useAsync'
 
 const POROSITY: Porosity[] = ['low', 'medium', 'high']
 const THICKNESS: Thickness[] = ['fine', 'medium', 'coarse']
@@ -26,8 +26,6 @@ export function FinderPage() {
     setSyncedQ(q)
     setDraft(q)
   }
-
-  const hairTypes = useAsync(api.hairTypes, [])
 
   // Favorites and "I use this" still feed the ranking, but only take effect on
   // the next search. The recommender skips products you already have, so
@@ -63,44 +61,9 @@ export function FinderPage() {
     rerank()
   }
 
-  const title = [
-    profile.hairTypes.length ? `For ${formatList(profile.hairTypes)} hair` : 'All products',
-    q && `matching “${q}”`,
-  ]
-    .filter(Boolean)
-    .join(' ')
-
-  const results = recs.data?.results ?? []
-
   return (
     <div className="finder">
-      <section className="finder__hero" aria-labelledby="hair-type-heading">
-        <h1 id="hair-type-heading" className="display">
-          What's your hair type?
-        </h1>
-        {hairTypes.data && (
-          <HairTypePicker
-            hairTypes={hairTypes.data}
-            selected={profile.hairTypes}
-            onToggle={profile.toggleHairType}
-          />
-        )}
-        <div className="finder__traits">
-          <TraitPicker
-            legend="Porosity"
-            options={POROSITY}
-            selected={profile.porosity}
-            onToggle={(v) => profile.toggleTrait('porosity', v)}
-          />
-          <TraitPicker
-            legend="Strands"
-            options={THICKNESS}
-            selected={profile.thickness}
-            onToggle={(v) => profile.toggleTrait('thickness', v)}
-          />
-        </div>
-        {hairTypes.error && <ApiDown />}
-      </section>
+      <HairSection />
 
       <section className="finder__inputs">
         <div className="field">
@@ -132,43 +95,84 @@ export function FinderPage() {
         </form>
       </section>
 
-      <section className="results" aria-labelledby="results-heading" aria-busy={recs.loading}>
-        <div className="results__head">
-          <h2 id="results-heading">{title}</h2>
-          {recs.data && <p className="muted">{results.length} products</p>}
-        </div>
-
-        {recs.data?.environment && location && (
-          <EnvironmentNote environment={recs.data.environment} location={location} />
-        )}
-
-        {recs.error && <ApiDown />}
-
-        {recs.data && results.length === 0 && (
-          <div className="empty">
-            <p>
-              Nothing matches “{q}”
-              {profile.hairTypes.length > 0 && ` for ${formatList(profile.hairTypes)} hair`}. Try fewer words, or
-              clear the search.
-            </p>
-            <button type="button" className="button" onClick={() => setParams({})}>
-              Clear search
-            </button>
-          </div>
-        )}
-
-        <div className="grid">
-          {results.map((r) => (
-            <ProductTile
-              key={r.product.id}
-              product={r.product}
-              reasons={r.reasons}
-              warnings={r.warnings}
-            />
-          ))}
-        </div>
-      </section>
+      <Results recs={recs} q={q} location={location} onClear={() => setParams({})} />
     </div>
+  )
+}
+
+function HairSection() {
+  const profile = useProfile()
+  const hairTypes = useAsync(api.hairTypes, [])
+  return (
+    <section className="finder__hero" aria-labelledby="hair-type-heading">
+      <h1 id="hair-type-heading" className="display">
+        What's your hair type?
+      </h1>
+      {hairTypes.data && (
+        <HairTypePicker hairTypes={hairTypes.data} selected={profile.hairTypes} onToggle={profile.toggleHairType} />
+      )}
+      <div className="finder__traits">
+        <TraitPicker
+          legend="Porosity"
+          options={POROSITY}
+          selected={profile.porosity}
+          onToggle={(v) => profile.toggleTrait('porosity', v)}
+        />
+        <TraitPicker
+          legend="Strands"
+          options={THICKNESS}
+          selected={profile.thickness}
+          onToggle={(v) => profile.toggleTrait('thickness', v)}
+        />
+      </div>
+      {hairTypes.error && <ApiDown />}
+    </section>
+  )
+}
+
+interface ResultsProps {
+  recs: AsyncState<RecommendationResponse>
+  q: string
+  location: Location | null
+  onClear: () => void
+}
+
+function Results({ recs, q, location, onClear }: ResultsProps) {
+  const { hairTypes } = useProfile()
+  const results = recs.data?.results ?? []
+  const title = [hairTypes.length ? `For ${formatList(hairTypes)} hair` : 'All products', q && `matching “${q}”`]
+    .filter(Boolean)
+    .join(' ')
+
+  return (
+    <section className="results" aria-labelledby="results-heading" aria-busy={recs.loading}>
+      <div className="results__head">
+        <h2 id="results-heading">{title}</h2>
+        {recs.data && <p className="muted">{results.length} products</p>}
+      </div>
+
+      {recs.data?.environment && location && <EnvironmentNote environment={recs.data.environment} location={location} />}
+
+      {recs.error && <ApiDown />}
+
+      {recs.data && results.length === 0 && (
+        <div className="empty">
+          <p>
+            Nothing matches “{q}”
+            {hairTypes.length > 0 && ` for ${formatList(hairTypes)} hair`}. Try fewer words, or clear the search.
+          </p>
+          <button type="button" className="button" onClick={onClear}>
+            Clear search
+          </button>
+        </div>
+      )}
+
+      <div className="grid">
+        {results.map((r) => (
+          <ProductTile key={r.product.id} product={r.product} reasons={r.reasons} warnings={r.warnings} />
+        ))}
+      </div>
+    </section>
   )
 }
 
