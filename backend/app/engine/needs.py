@@ -74,8 +74,9 @@ def needs_for(
         n.add(SCALP_NEEDS[scalp], f"for your {scalp} scalp")
     if color_treated:
         n.add(COLOR_TREATED_NEEDS, "for your colored hair")
+    n.quiet.add("for your search")
     for g in goals:
-        n.add(GOAL_NEEDS[g], "for what you searched")
+        n.add(GOAL_NEEDS[g], "for your search")
     for c in conditions:
         phrase = f"for today's {CONDITION_LABELS[c]}"
         n.add(CONDITION_NEEDS[c], phrase)

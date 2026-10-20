@@ -238,10 +238,10 @@ def test_summary_falls_back_to_the_family_and_never_says_0_of_0():
     assert evidence.summary == (
         "2 of 3 reviewers with curly hair liked it: it defines and holds"
     )
-    # Same-code reviewers win over the family when there are any.
+    # One same-code reviewer is too few to quote over the family it belongs to.
     mixed = family_only + [r(1, hair_type="3B")]
     assert ReviewIndex(mixed).evidence("x", ["3B"]).summary == (
-        "1 of 1 reviewers with 3B hair liked it: it defines and holds"
+        "3 of 4 reviewers with curly hair liked it: it defines and holds"
     )
     # Outside the family, or no hair info at all: no summary.
     assert ReviewIndex(family_only).evidence("x", ["1A"]).summary is None
@@ -319,3 +319,55 @@ def test_same_ingredients_helping_two_needs_share_one_line():
     assert reasons == [
         "Glycerin adds moisture and stays light for your low-porosity hair"
     ]
+
+
+@pytest.mark.parametrize(
+    "name, category, kind",
+    [
+        ("Twist Whip Butter", "Leave-in conditioner", "cream"),
+        ("Re:Coil Curl Activator", "Styling", "cream"),
+        ("PATTERN Leave-In Conditioner", "Hair care", "leave_in"),
+        ("Argan Oil Repair Mask", "Hair oil", "deep_conditioner"),
+        ("Moisture Shampoo", "Shampoo", "shampoo"),
+        ("Holy Grail 15", "Leave-in conditioner", "leave_in"),
+        ("Holy Grail 15", "Accessories", "other"),
+    ],
+)
+def test_product_kind_prefers_the_name(name, category, kind):
+    assert query.product_kind(name, category) == kind
+
+
+def test_kind_words_are_not_also_search_matches():
+    assert query.without_kinds("leave-in conditioner for frizz").split() == [
+        "for",
+        "frizz",
+    ]
+    request = RecommendationRequest(hair_types=["3B"], query="leave-in")
+    results = GraphRecommender(catalog, ReviewIndex([])).recommend(request, None)
+    assert not any(r.startswith("Matches") for x in results for r in x.reasons)
+
+
+def test_a_few_same_type_reviews_defer_to_the_family_in_the_summary():
+    few_same = [ReviewSignal(product_id="x", hair_type="3B", sentiment=-1)] * 3
+    family = [ReviewSignal(product_id="x", hair_family="Curly", sentiment=1)] * 40
+    e = ReviewIndex(few_same + family).evidence("x", ["3B"])
+    assert e.summary == "40 of 43 reviewers with curly hair liked it"
+
+    many_same = [ReviewSignal(product_id="x", hair_type="3B", sentiment=1)] * 12
+    e = ReviewIndex(many_same + family).evidence("x", ["3B"])
+    assert e.summary == "12 of 12 reviewers with 3B hair liked it"
+
+
+def test_plural_verbs_and_one_warning_per_ingredient():
+    lines = analyze(
+        [
+            ("Water", "Aqua", 60),
+            ("Shea butter", "Butyrospermum Parkii Butter", 20),
+            ("PVP", "PVP", 10),
+            ("Polyquaternium-11", "Polyquaternium-11", 10),
+        ]
+    )
+    n = needs_for(["1A"], thickness="fine", goals=["define_curls"])
+    reasons, warnings = explain(score(lines, n)[1], n)
+    assert "PVP and polyquaternium-11 define and hold" in reasons
+    assert warnings == ["Shea butter can weigh hair down"]

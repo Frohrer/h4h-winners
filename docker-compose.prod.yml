@@ -1,0 +1,22 @@
+# Production: built UI served by nginx, which proxies /api to the backend.
+# Only data/generated is needed, not the raw scrape.
+services:
+  backend:
+    build: ./backend
+    command: ["uv", "run", "--frozen", "fastapi", "run", "app/main.py", "--host", "0.0.0.0", "--port", "8000"]
+    environment:
+      - STRAND_CATALOG=/data/generated/catalog.json
+      - STRAND_REVIEWS=/data/generated/reviews.jsonl
+    volumes:
+      - ./data/generated:/data/generated:ro
+    restart: unless-stopped
+
+  web:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+    ports:
+      - "${STRANDS_PORT:-8080}:80"
+    depends_on:
+      - backend
+    restart: unless-stopped

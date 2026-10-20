@@ -58,6 +58,9 @@ def _clean(token: str) -> str:
     return re.sub(r"\s+", " ", token).strip(" .-")
 
 
+MARKETING = re.compile(r"\b(our|all-new|formula|contains|made with)\b", re.IGNORECASE)
+
+
 def parse_inci(raw: str | None) -> list[str]:
     if not raw:
         return []
@@ -86,8 +89,10 @@ def parse_inci(raw: str | None) -> list[str]:
     tokens = [t for token in tokens for t in re.split(r"\.\s+(?=[A-Za-z])", token)]
     out = []
     for token in map(_clean, tokens):
-        # Long tokens are marketing sentences, not names.
-        prose = len(token) > 100 or len(token.split()) > 10
+        # Long tokens and "Our all-new ... formula" are marketing, not names.
+        prose = (
+            len(token) > 100 or len(token.split()) > 10 or bool(MARKETING.search(token))
+        )
         if re.search(r"[a-z]", token, re.IGNORECASE) and not prose:
             out.append(token)
     return out

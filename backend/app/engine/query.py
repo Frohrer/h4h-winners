@@ -28,7 +28,7 @@ KIND_WORDS: list[tuple[str, str]] = [
     ("conditioner", r"conditioner"),
     ("gel", r"\bgel|jelly"),
     ("mousse", r"mousse|foam"),
-    ("cream", r"cream|butter|pudding|souffl|custard"),
+    ("cream", r"cream|butter|pudding|souffl|custard|smoothie|lotion|activator"),
     ("serum", r"serum"),
     ("oil", r"\boil\b"),
     ("spray", r"spray|mist|refresher"),
@@ -53,16 +53,30 @@ def kind_of(text: str) -> str:
     )
 
 
+def product_kind(name: str, category: str) -> str:
+    """The name decides when it can ("Twist Whip Butter" filed under "Leave-in")."""
+    kind = kind_of(name)
+    return kind if kind != "other" else kind_of(category)
+
+
 def kinds_in(text: str) -> set[str]:
     """Every product kind the query names ("gel or cream" → {gel, cream})."""
-    t = text.lower()
-    found, rest = set(), t
+    return _split_kinds(text)[0]
+
+
+def without_kinds(text: str) -> str:
+    """The query minus the words that named a product kind ("leave-in for frizz" → "for frizz")."""
+    return _split_kinds(text)[1]
+
+
+def _split_kinds(text: str) -> tuple[set[str], str]:
+    found, rest = set(), text.lower()
     for kind, pattern in KIND_WORDS:
         if re.search(pattern, rest):
             found.add(kind)
             # "leave-in conditioner" names one kind, not two.
             rest = re.sub(pattern + r"\w*( conditioner)?", " ", rest)
-    return found
+    return found, rest
 
 
 def climates_in(text: str) -> list[Condition]:

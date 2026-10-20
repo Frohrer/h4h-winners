@@ -123,7 +123,7 @@ class GraphRecommender:
             pid: delivery(lines) for pid, lines in self.lines.items()
         }
         self.kinds = {
-            p.id: query.kind_of(f"{p.category} {p.name}")
+            p.id: query.product_kind(p.name, p.category)
             for p in catalog.products.values()
         }
         self.formula_weights = {
@@ -210,7 +210,8 @@ class GraphRecommender:
         owned_ids = set(request.liked_product_ids) | set(request.current_product_ids)
         liked = [p for pid in request.liked_product_ids if (p := self.catalog.get(pid))]
         wanted_kinds = query.kinds_in(request.query)
-        words = _tokens(request.query)
+        # Words that picked a product kind already did their job.
+        words = _tokens(query.without_kinds(request.query))
 
         # Weather where they are, plus any climate they mention ("beach trip").
         conditions = conditions_from(environment)

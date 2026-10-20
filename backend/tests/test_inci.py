@@ -176,3 +176,9 @@ def test_display_name():
         display_name("Hydrolyzed Adansonia Digitata (Baobab) Seed Protein")
         == "Hydrolyzed adansonia digitata (baobab) seed protein"
     )
+
+
+def test_marketing_text_is_not_an_ingredient():
+    assert parse_inci(
+        "Our all-new aloe & honey deep conditioner, Water, Glycerin, Honey, Cetyl Alcohol"
+    ) == ["Water", "Glycerin", "Honey", "Cetyl Alcohol"]

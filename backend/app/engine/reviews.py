@@ -30,6 +30,9 @@ FAMILY_WEIGHT = 0.4
 STEP_PENALTY = 0.35
 # With this much matching evidence the reviews count half; fewer and they barely count.
 HALF_TRUST_AT = 5
+# Fewer same-code reviewers than this are too few to quote ("1 of 4 liked it") when the
+# asker's whole family has more to say.
+QUOTE_SAME_TYPE_FROM = 10
 
 
 class ReviewSignal(BaseModel):
@@ -103,14 +106,16 @@ class ReviewIndex:
             return Evidence(len(reviews), len(same), 0.0, None)
 
         trust = weight / (weight + HALF_TRUST_AT)
-        # Same-code reviewers when there are any, else everyone in the asker's families
-        # ("3 of 4 reviewers with curly hair"), else no summary.
+        # Same-code reviewers when there are enough, else everyone in the asker's
+        # families ("3 of 4 reviewers with curly hair"), else no summary.
         summary = None
         families = list(dict.fromkeys(map(family_of, hair_types)))
-        kin = same or [r for r in reviews if _family(r) in families]
+        kin_family = [r for r in reviews if _family(r) in families]
+        use_same = len(same) >= QUOTE_SAME_TYPE_FROM or len(same) >= len(kin_family)
+        kin = same if use_same else kin_family
         if kin:
             liked = sum(1 for r in kin if r.sentiment > 0)
-            who = "/".join(hair_types) if same else "/".join(families).lower()
+            who = "/".join(hair_types) if use_same else "/".join(families).lower()
             summary = f"{liked} of {len(kin)} reviewers with {who} hair liked it"
             if helped:
                 top = max(helped, key=helped.get)

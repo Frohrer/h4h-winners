@@ -132,10 +132,13 @@ def _verb(phrase: str, plural: bool) -> str:
         return phrase
     if phrase.startswith("is a "):
         return f"are {phrase[5:]}s"  # "is a harsh cleanser" → "are harsh cleansers"
-    first, _, rest = phrase.partition(" ")
-    if first.endswith("s") and not first.endswith("ss"):
-        first = first[:-1]
-    return f"{first} {rest}".strip()
+    parts = []
+    for part in phrase.split(" and "):  # "defines and holds" → "define and hold"
+        first, _, rest = part.partition(" ")
+        if first.endswith("s") and not first.endswith("ss"):
+            first = first[:-1]
+        parts.append(f"{first} {rest}".strip())
+    return " and ".join(parts)
 
 
 def explain(
@@ -180,13 +183,17 @@ def explain(
         for (names, why), phrases in lines.items()
     ]
 
-    warnings = []
+    warnings, warned = [], set()
     for (need, condition), items in sorted(
         hurts.items(), key=lambda kv: sum(p for _, p in kv[1])
     ):
         if sum(p for _, p in items) > -WARNING_MIN or len(warnings) == 2:
             continue
         names = [n for n, _ in sorted(items, key=lambda x: x[1])][:2]
+        # One warning per ingredient: the worst thing it does.
+        if tuple(names) in warned:
+            continue
+        warned.add(tuple(names))
         text = f"{_join(names)} {_verb(HURTS[need], len(names) > 1)}"
         warnings.append(
             text + (f" in today's {CONDITION_LABELS[condition]}" if condition else "")

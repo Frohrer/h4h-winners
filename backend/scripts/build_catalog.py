@@ -22,7 +22,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from app.catalog import SEED_PATH, CatalogFile
 from app.engine.inci import display_name, ingredient_key, parse_inci
 from app.engine.ingredient_groups import classify
-from app.engine.query import kind_of
+from app.engine.query import product_kind
 from app.engine.vocab import HAIR_TYPES
 from app.ids import product_key
 
@@ -438,7 +438,7 @@ def main() -> None:
             if EXCLUDE.search(text):
                 dropped[(source, "not a formula")] += 1
                 continue
-            kind = kind_of(text)
+            kind = product_kind(r["name"], r["category"] or "")
             if kind == "other":
                 dropped[(source, "kind other")] += 1
                 continue
