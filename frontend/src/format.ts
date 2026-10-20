@@ -2,8 +2,7 @@ const usd = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' 
 
 export const formatPrice = (n: number) => usd.format(n)
 
-export function formatPct(n: number | null): string {
-  if (n == null) return 'Unknown'
+export function formatPct(n: number): string {
   if (n < 1) return `${n.toFixed(1)}%`
   return `${Number.isInteger(n) ? n : n.toFixed(1)}%`
 }

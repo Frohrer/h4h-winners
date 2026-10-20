@@ -11,7 +11,10 @@ export function SimilarProducts({ items }: { items: SimilarProduct[] }) {
   return (
     <div className="grid grid--similar">
       {items.map(({ product, similarity, shared }) => {
+        const shown = shared.slice(0, SHOWN_INGREDIENTS)
         const more = shared.length - SHOWN_INGREDIENTS
+        // Scraped formulas carry no amounts; drop the amount columns rather than fill them with blanks.
+        const amounts = shown.some((s) => s.this_pct != null || s.other_pct != null)
         return (
           <ProductTile key={product.id} product={product}>
             <div className="match">
@@ -21,16 +24,24 @@ export function SimilarProducts({ items }: { items: SimilarProduct[] }) {
                 <thead>
                   <tr>
                     <th scope="col">In both</th>
-                    <th scope="col">This one</th>
-                    <th scope="col">That one</th>
+                    {amounts && (
+                      <>
+                        <th scope="col">This one</th>
+                        <th scope="col">That one</th>
+                      </>
+                    )}
                   </tr>
                 </thead>
                 <tbody>
-                  {shared.slice(0, SHOWN_INGREDIENTS).map((s) => (
+                  {shown.map((s) => (
                     <tr key={s.ingredient_id}>
                       <th scope="row">{s.name}</th>
-                      <td>{formatPct(s.this_pct)}</td>
-                      <td>{formatPct(s.other_pct)}</td>
+                      {amounts && (
+                        <>
+                          <td>{s.this_pct != null && formatPct(s.this_pct)}</td>
+                          <td>{s.other_pct != null && formatPct(s.other_pct)}</td>
+                        </>
+                      )}
                     </tr>
                   ))}
                 </tbody>
