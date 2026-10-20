@@ -17,7 +17,7 @@ from app.models import (
     RecommendationRequest,
     SimilarProduct,
 )
-from app.recommender import get_recommender
+from app.recommender import Ranking, get_recommender
 
 client = TestClient(app)
 catalog = get_catalog()
@@ -188,6 +188,17 @@ def test_recommendations_skip_products_the_person_already_has():
 def test_recommendations_with_no_inputs_return_catalog():
     body = client.post("/api/recommendations", json={}).json()
     assert len(body["results"]) == min(24, len(catalog.products))
+    assert body["total"] == len(catalog.products)
+
+
+def test_a_bigger_limit_extends_the_same_ranking():
+    def ids(limit):
+        body = client.post("/api/recommendations", json={"limit": limit}).json()
+        return [r["product"]["id"] for r in body["results"]]
+
+    first, more = ids(5), ids(10)
+    assert more[:5] == first
+    assert len(more) == 10
 
 
 # --- recommender hand-off ------------------------------------------------------
@@ -198,14 +209,17 @@ class FixedRecommender:
 
     def recommend(
         self, request: RecommendationRequest, environment: Environment | None
-    ) -> list[Recommendation]:
+    ) -> Ranking:
         p = catalog.summary(catalog.get("halo-jojoba-shine-oil"))
         band = environment.dew_point_band if environment else "none"
-        return [
-            Recommendation(
-                product=p, score=1.0, reasons=[f"echo:{request.query}:{band}"]
-            )
-        ]
+        return Ranking(
+            [
+                Recommendation(
+                    product=p, score=1.0, reasons=[f"echo:{request.query}:{band}"]
+                )
+            ],
+            1,
+        )
 
     def similar_products(self, product_id: str, limit: int) -> list[SimilarProduct]:
         return []

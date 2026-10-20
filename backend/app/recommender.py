@@ -11,7 +11,7 @@ knowledge lives in app/engine/rules.py and app/engine/ingredient_groups.py.
 import re
 from dataclasses import dataclass
 from functools import lru_cache
-from typing import Protocol
+from typing import NamedTuple, Protocol
 
 from app.catalog import Catalog, get_catalog
 from app.engine import query
@@ -29,10 +29,16 @@ from app.models import (
 )
 
 
+class Ranking(NamedTuple):
+    results: list[Recommendation]
+    # Every eligible product, not just the request.limit that were explained.
+    total: int
+
+
 class Recommender(Protocol):
     def recommend(
         self, request: RecommendationRequest, environment: Environment | None
-    ) -> list[Recommendation]:
+    ) -> Ranking:
         """Rank products for a person's hair types, liked/current products, free-text query,
         and current conditions where they are (None if location is off or the lookup failed).
         request.location is still available for anything beyond current weather,
@@ -325,7 +331,7 @@ class GraphRecommender:
 
     def recommend(
         self, request: RecommendationRequest, environment: Environment | None
-    ) -> list[Recommendation]:
+    ) -> Ranking:
         ask = self._ask(request, environment)
         # Score everything cheaply, then explain only what will be shown.
         ranked = [
@@ -334,10 +340,11 @@ class GraphRecommender:
             if self._eligible(product, ask)
         ]
         ranked.sort(key=lambda r: -r[0])
-        return [
+        results = [
             self._explained(total, product, signals, ask)
             for total, signals, product in ranked[: request.limit]
         ]
+        return Ranking(results, len(ranked))
 
 
 @lru_cache

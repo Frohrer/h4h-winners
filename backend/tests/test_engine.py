@@ -263,8 +263,10 @@ def test_reviews_add_their_trusted_share_and_many_can_change_the_order():
     request = RecommendationRequest(hair_types=["4C"], query="deep conditioner")
 
     def ranked(reviews):
-        results = GraphRecommender(catalog, ReviewIndex(reviews)).recommend(
-            request, None
+        results = (
+            GraphRecommender(catalog, ReviewIndex(reviews))
+            .recommend(request, None)
+            .results
         )
         return {r.product.id: r.score for r in results}, [r.product.id for r in results]
 
@@ -285,13 +287,19 @@ def test_reviews_add_their_trusted_share_and_many_can_change_the_order():
     assert thirty[underdog] - scores[underdog] == pytest.approx(0.5 * 30 / 35, abs=1e-3)
     assert order_after == [underdog, order[0]]
 
-    top = GraphRecommender(catalog, ReviewIndex(happy(30))).recommend(request, None)[0]
+    top = (
+        GraphRecommender(catalog, ReviewIndex(happy(30)))
+        .recommend(request, None)
+        .results[0]
+    )
     assert "30 of 30 reviewers with 4C hair liked it: it adds moisture" in top.reasons
 
 
 def test_query_kind_filters_results():
     request = RecommendationRequest(hair_types=["3B"], query="leave-in")
-    results = GraphRecommender(catalog, ReviewIndex([])).recommend(request, None)
+    results = (
+        GraphRecommender(catalog, ReviewIndex([])).recommend(request, None).results
+    )
     assert {r.product.category for r in results} == {"Leave-in conditioner"}
 
 
@@ -343,7 +351,9 @@ def test_kind_words_are_not_also_search_matches():
         "frizz",
     ]
     request = RecommendationRequest(hair_types=["3B"], query="leave-in")
-    results = GraphRecommender(catalog, ReviewIndex([])).recommend(request, None)
+    results = (
+        GraphRecommender(catalog, ReviewIndex([])).recommend(request, None).results
+    )
     assert not any(r.startswith("Matches") for x in results for r in x.reasons)
 
 

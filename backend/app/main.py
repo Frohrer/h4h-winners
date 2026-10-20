@@ -82,8 +82,10 @@ def recommendations(
         if body.location
         else None
     )
+    ranking = recommender.recommend(body, environment)
     return RecommendationResponse(
-        results=recommender.recommend(body, environment),
+        results=ranking.results,
+        total=ranking.total,
         environment=environment,
     )
 

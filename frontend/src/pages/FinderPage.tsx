@@ -13,6 +13,7 @@ import { useAsync, type AsyncState } from '../useAsync'
 
 const POROSITY: Porosity[] = ['low', 'medium', 'high']
 const THICKNESS: Thickness[] = ['fine', 'medium', 'coarse']
+const PAGE = 24
 
 export function FinderPage() {
   const profile = useProfile()
@@ -36,6 +37,16 @@ export function FinderPage() {
 
   const location = profile.activeLocation
   const locationKey = location ? `${location.latitude},${location.longitude}` : 'none'
+
+  // "Show more" asks for a longer list of the same ranking; a new search starts over.
+  const searchKey = [profile.hairTypes.join(','), profile.porosity, profile.thickness, q, locationKey, rankKey].join('|')
+  const [shown, setShown] = useState(PAGE)
+  const [shownFor, setShownFor] = useState(searchKey)
+  if (searchKey !== shownFor) {
+    setShownFor(searchKey)
+    setShown(PAGE)
+  }
+
   const recs = useAsync(
     () =>
       api.recommend({
@@ -47,8 +58,9 @@ export function FinderPage() {
         current_product_ids: profile.using,
         query: q,
         location,
+        limit: shown,
       }),
-    [profile.hairTypes.join(','), profile.porosity, profile.thickness, q, locationKey, rankKey],
+    [searchKey, shown],
     // Wait out IP detection so the first results already include climate,
     // instead of rendering once without it and reshuffling a second later.
     !profile.detecting,
@@ -95,7 +107,13 @@ export function FinderPage() {
         </form>
       </section>
 
-      <Results recs={recs} q={q} location={location} onClear={() => setParams({})} />
+      <Results
+        recs={recs}
+        q={q}
+        location={location}
+        onClear={() => setParams({})}
+        onMore={() => setShown((n) => n + PAGE)}
+      />
     </div>
   )
 }
@@ -135,9 +153,10 @@ interface ResultsProps {
   q: string
   location: Location | null
   onClear: () => void
+  onMore: () => void
 }
 
-function Results({ recs, q, location, onClear }: ResultsProps) {
+function Results({ recs, q, location, onClear, onMore }: ResultsProps) {
   const { hairTypes } = useProfile()
   const results = recs.data?.results ?? []
   const title = [hairTypes.length ? `For ${formatList(hairTypes)} hair` : 'All products', q && `matching “${q}”`]
@@ -148,7 +167,7 @@ function Results({ recs, q, location, onClear }: ResultsProps) {
     <section className="results" aria-labelledby="results-heading" aria-busy={recs.loading}>
       <div className="results__head">
         <h2 id="results-heading">{title}</h2>
-        {recs.data && <p className="muted">{results.length} products</p>}
+        {recs.data && <p className="muted">{recs.data.total} products</p>}
       </div>
 
       {recs.data?.environment && location && <EnvironmentNote environment={recs.data.environment} location={location} />}
@@ -172,6 +191,14 @@ function Results({ recs, q, location, onClear }: ResultsProps) {
           <ProductTile key={r.product.id} product={r.product} reasons={r.reasons} warnings={r.warnings} />
         ))}
       </div>
+
+      {recs.data && results.length < recs.data.total && (
+        <div className="results__more">
+          <button type="button" className="button" onClick={onMore} disabled={recs.loading}>
+            Show more
+          </button>
+        </div>
+      )}
     </section>
   )
 }

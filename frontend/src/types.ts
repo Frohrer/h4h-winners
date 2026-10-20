@@ -108,5 +108,7 @@ export interface RecommendationRequest {
 
 export interface RecommendationResponse {
   results: Recommendation[]
+  // How many products matched in all; results holds the top `limit` of them.
+  total: number
   environment: Environment | null
 }

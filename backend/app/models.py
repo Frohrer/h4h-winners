@@ -157,10 +157,12 @@ class RecommendationRequest(BaseModel):
     color_treated: bool = False
     # None means the person turned location off; recommend without climate.
     location: Location | None = None
-    limit: int = Field(default=24, ge=1, le=100)
+    limit: int = Field(default=24, ge=1, le=1000)
 
 
 class RecommendationResponse(BaseModel):
     results: list[Recommendation]
+    # How many products matched in all; results holds the top `limit` of them.
+    total: int
     # Echoed so the UI can say which conditions shaped the results.
     environment: Environment | None = None
